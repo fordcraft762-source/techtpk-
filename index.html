@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Телефоны изнутри</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--text:#14181f;--muted:#667085;--line:#dfe3ea;--accent:#2563eb;--on:#fff;--ok:#16a34a;--err:#dc2626;--shadow:0 6px 24px rgba(20,30,60,.08);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1317;--card:#181e25;--text:#eef2f7;--muted:#98a2b3;--line:#27303a;--accent:#5b9dff;--on:#08111f;--ok:#4ade80;--err:#f87171;--shadow:0 6px 24px rgba(0,0,0,.4);color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header div{max-width:1100px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:10px}
+header a{color:var(--text);text-decoration:none;font-weight:700;font-size:18px}
+main{max-width:1100px;margin:0 auto;padding:20px 18px 90px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+input[type=search]{flex:1 1 220px;font:inherit;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.chip,button{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;transition:all .3s ease}
+.chip.on,button.on{background:var(--accent);color:var(--on);border-color:var(--accent)}
+button:hover{border-color:var(--accent)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.tile{position:relative;display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;text-decoration:none;color:var(--text);overflow:hidden;transition:transform .35s ease,box-shadow .35s ease;animation:pop .5s ease both}
+.tile:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.pic{height:210px;display:grid;place-items:center;background:color-mix(in srgb,var(--text) 5%,var(--card))}
+.pic svg{height:170px;width:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))}
+.tile b{display:block;padding:12px 14px 0;color:var(--accent);font-size:17px}
+.tile span{display:block;padding:0 14px 14px;color:var(--muted);font-size:14px}
+.cmpb{position:absolute;top:10px;right:10px;padding:6px 10px}
+@keyframes pop{from{opacity:0;transform:translateY(12px)}}
+#cbar[hidden]{display:none}
+#cbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:10px 14px;border-radius:999px}
+.back{display:inline-block;margin-bottom:14px;color:var(--accent);text-decoration:none;font-weight:600}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px}
+@media(max-width:820px){.dgrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.stage{height:480px;perspective:1400px;display:grid;place-items:center;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;overflow:hidden;border-radius:14px;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)}
+.stage:active{cursor:grabbing}
+.phone{position:relative;width:180px;height:370px;transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateY(var(--ry))}
+.layer{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none;transform:translateZ(calc((var(--i) - 2.5) * var(--ex) * 66px))}
+.layer svg{width:100%;height:100%;overflow:visible;pointer-events:none;display:block}
+.layer svg .h{pointer-events:visiblePainted}
+.layer.cover{opacity:calc(1 - var(--ex) * .55)}
+.layer.box{pointer-events:auto}
+.disp{border-radius:26px;background:linear-gradient(160deg,#0a0e18,#1c2a4a 70%,#26365c);box-shadow:inset 0 0 0 4px #000;display:grid;place-items:center;color:#cfe0ff;font-weight:300;font-size:46px}
+.disp i{position:absolute;top:14px;left:50%;width:13px;height:13px;margin-left:-6px;border-radius:50%;background:#000;box-shadow:inset 0 0 0 2px #1d2230}
+.layer.sel svg,.layer.sel .disp{filter:drop-shadow(0 0 7px var(--accent)) drop-shadow(0 0 3px var(--accent))}
+.layer.ok svg,.layer.ok .disp{filter:drop-shadow(0 0 10px var(--ok))}
+.layer.bad svg,.layer.bad .disp{filter:drop-shadow(0 0 10px var(--err))}
+#tip{position:fixed;z-index:40;pointer-events:none;background:var(--text);color:var(--bg);padding:4px 10px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.ctrl input[type=range]{flex:1 1 120px;accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+#qbar{margin-top:10px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,transparent);font-weight:600}
+h1{margin:0 0 2px;font-size:28px;line-height:1.2}
+.sub{color:var(--muted);margin:0 0 14px}
+.head{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.head svg{height:120px;width:auto;flex:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);width:38%}
+.parts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+#ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .3s ease}
+#ov[hidden]{display:none}
+.sheet{width:100%;max-width:480px;max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;animation:rise .45s cubic-bezier(.22,1,.36,1)}
+.sheet.wide{max-width:680px}
+.sheet h2{margin:0 0 4px;font-size:22px}
+.sheet .em{font-size:40px}
+.sheet p{color:var(--muted);margin:8px 0 12px}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}}
+footer{max-width:1100px;margin:0 auto;padding:0 18px 30px;color:var(--muted);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div><a href="#/">📱 Телефоны изнутри</a></div></header>
+<main id="app"></main>
+<footer>Схемы упрощённые и показывают устройство в общих чертах, а не реальную раскладку конкретной модели. Характеристики справочные: в разных регионах и версиях они могут отличаться, перед покупкой сверяйтесь с сайтом производителя.</footer>
+<div id="ov" hidden><div class="sheet" id="sheet"></div></div>
+<div id="tip"></div>
+<script>
+const $=s=>document.querySelector(s);
+const KEYS='id brand name year c1 c2 lay n soc ram mem inch res hz panel bat chg cams w ip mat code'.split(' ');
+const DATA=`pixel8|Google|Pixel 8|2023|#2d3036|#5a606b|bar|2|Google Tensor G3|8 ГБ|128 / 256 ГБ|6,2″|2400×1080|120 Гц|OLED|4575 мАч|27 Вт проводная, 18 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая|187 г|IP68|Алюминиевая рамка, стеклянная задняя панель|shiba
+pixel8pro|Google|Pixel 8 Pro|2023|#7fa6cf|#c5d9ee|bar|3|Google Tensor G3|12 ГБ|128 ГБ – 1 ТБ|6,7″|2992×1344|1–120 Гц|LTPO OLED|5050 мАч|30 Вт проводная, 23 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 48 Мп телефото 5×|213 г|IP68|Алюминиевая рамка, стеклянная задняя панель|husky
+pixel8a|Google|Pixel 8a|2024|#7ab98a|#c6e6cf|bar|2|Google Tensor G3|8 ГБ|128 / 256 ГБ|6,1″|2400×1080|120 Гц|OLED|4492 мАч|18 Вт проводная, 7,5 Вт беспроводная|64 Мп основная + 13 Мп ультраширокая|188 г|IP67|Алюминиевая рамка, пластиковая задняя панель|akita
+pixel7|Google|Pixel 7|2022|#cfd1cc|#f0f1ee|bar|2|Google Tensor G2|8 ГБ|128 / 256 ГБ|6,3″|2400×1080|90 Гц|OLED|4355 мАч|20 Вт проводная|50 Мп основная + 12 Мп ультраширокая|197 г|IP68|Алюминиевая рамка, стеклянная задняя панель|panther
+s24|Samsung|Galaxy S24|2024|#8a7ec0|#cfc7f0|col|3|Exynos 2400 или Snapdragon 8 Gen 3 (зависит от региона)|8 ГБ|128 / 256 / 512 ГБ|6,2″|2340×1080|1–120 Гц|Dynamic AMOLED 2X|4000 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|167 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+s23|Samsung|Galaxy S23|2023|#e3d3bf|#f6ede2|col|3|Snapdragon 8 Gen 2 for Galaxy|8 ГБ|128 / 256 / 512 ГБ|6,1″|2340×1080|120 Гц|Dynamic AMOLED 2X|3900 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|168 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph15|Apple|iPhone 15|2023|#f0c7d0|#fbe4e9|sq|2|Apple A16 Bionic|6 ГБ|128 / 256 / 512 ГБ|6,1″|2556×1179|60 Гц|Super Retina XDR OLED|3349 мАч|USB‑C, MagSafe до 15 Вт|48 Мп основная + 12 Мп ультраширокая|171 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph15pro|Apple|iPhone 15 Pro|2023|#6e7078|#b9bbc2|sq|3|Apple A17 Pro|8 ГБ|128 ГБ – 1 ТБ|6,1″|2556×1179|1–120 Гц|LTPO Super Retina XDR OLED|3274 мАч|USB‑C (USB 3), MagSafe до 15 Вт|48 Мп основная + 12 Мп ультраширокая + 12 Мп телефото 3×|187 г|IP68|Титановая рамка, матовая стеклянная задняя панель|
+op12|OnePlus|OnePlus 12|2024|#1f6b55|#4aa27f|sq|3|Snapdragon 8 Gen 3|12 / 16 ГБ|256 / 512 ГБ|6,82″|3168×1440|1–120 Гц|LTPO AMOLED|5400 мАч|100 Вт проводная, 50 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 64 Мп телефото 3×|220 г|IP65|Алюминиевая рамка, стеклянная задняя панель|
+mi13|Xiaomi|Xiaomi 13|2022|#2b5d8a|#6fa3d3|sq|3|Snapdragon 8 Gen 2|8 / 12 ГБ|128 – 512 ГБ|6,36″|2400×1080|120 Гц|AMOLED|4500 мАч|67 Вт проводная, 50 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3,2×|189 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+nothing2|Nothing|Phone (2)|2023|#d9dde2|#f4f6f8|dual|2|Snapdragon 8+ Gen 1|8 / 12 ГБ|128 / 256 / 512 ГБ|6,7″|2412×1080|1–120 Гц|LTPO OLED|4700 мАч|45 Вт проводная, 15 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая|201 г|IP54|Алюминиевая рамка, прозрачная стеклянная панель со светодиодами Glyph|
+fp5|Fairphone|Fairphone 5|2023|#3a3f46|#7a828d|dual|2|Qualcomm QCM6490|8 ГБ|256 ГБ|6,46″|2770×1224|90 Гц|OLED|4200 мАч (съёмная)|30 Вт проводная|50 Мп основная + 50 Мп ультраширокая|212 г|IP55|Модульный корпус со съёмной задней панелью и батареей|`;
+const P=DATA.split('\n').map(l=>{const a=l.split('|'),o={};KEYS.forEach((k,i)=>o[k]=a[i]);o.n=+o.n;return o});
+const byId=id=>P.find(p=>p.id===id);
+
+/* ---------- SVG-детали ---------- */
+let uid=0;
+const lens=(x,y,r=15)=>`<circle class="h" cx="${x}" cy="${y}" r="${r}" fill="#0c0e12" stroke="#6b7280" stroke-width="2"/><circle cx="${x}" cy="${y}" r="${r*.55}" fill="#1b2433" stroke="#3b4a63"/><circle cx="${x-r*.2}" cy="${y-r*.22}" r="${r*.16}" fill="#7aa2ff" opacity=".7"/>`;
+function camSvg(p){
+  const n=p.n;let s='';
+  if(p.lay==='bar'){s=`<rect class="h" x="-2" y="42" width="184" height="50" fill="#14171c"/>`+[...Array(n)].map((_,i)=>lens(n==3?46+i*44:62+i*54,67)).join('')}
+  else if(p.lay==='sq'){const L=n==2?[[48,48],[48,92]]:[[48,46],[48,92],[86,69]];s=`<rect class="h" x="14" y="14" width="${n==2?78:104}" height="${n==2?104:112}" rx="22" fill="#171a20" stroke="#4b5260"/>`+L.map(([x,y])=>lens(x,y,17)).join('')}
+  else if(p.lay==='col'){s=[...Array(n)].map((_,i)=>lens(40,44+i*42,15)).join('')}
+  else{s=`<rect class="h" x="14" y="16" width="64" height="104" rx="20" fill="#14171c" stroke="#4b5260"/>`+lens(46,50,14)+lens(46,90,14)}
+  return `<svg viewBox="0 0 180 370">${s}</svg>`;
+}
+function bodySvg(p,withCam){
+  const g='g'+(++uid);
+  return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.c2}"/><stop offset="1" stop-color="${p.c1}"/></linearGradient></defs><rect class="h" width="180" height="370" rx="26" fill="url(#${g})"/><rect width="180" height="370" rx="26" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"/></svg>`
+   +(withCam?camSvg(p).replace('<svg ','<svg style="position:absolute;inset:0" '):'');
+}
+const batSvg=p=>`<svg viewBox="0 0 180 370"><rect x="70" y="106" width="40" height="12" rx="3" fill="#8a93a3"/><rect class="h" x="28" y="118" width="124" height="190" rx="12" fill="#3d4452" stroke="#8a93a3" stroke-width="2"/><text x="90" y="205" text-anchor="middle" fill="#e5e9f0" font-size="14" font-weight="700">Li‑ion</text><text x="90" y="226" text-anchor="middle" fill="#b9c2d0" font-size="12">${p.bat.split(' (')[0]}</text></svg>`;
+const boardSvg=p=>`<svg viewBox="0 0 180 370"><rect class="h" x="22" y="22" width="136" height="170" rx="14" fill="#1e7a52" stroke="#4fd09a" stroke-width="2"/><rect x="42" y="46" width="52" height="52" rx="4" fill="#23272e" stroke="#9aa3b2"/><text x="68" y="76" text-anchor="middle" font-size="11" fill="#d4dae6" font-weight="700">SoC</text><rect x="106" y="48" width="38" height="26" rx="3" fill="#2b3038" stroke="#9aa3b2"/><rect x="106" y="82" width="38" height="18" rx="3" fill="#2b3038" stroke="#9aa3b2"/><path d="M42 122h102M42 138h74M42 154h102M42 170h60" stroke="#8ff0c4" opacity=".55" fill="none"/><rect class="h" x="58" y="300" width="64" height="42" rx="8" fill="#1e7a52" stroke="#4fd09a" stroke-width="2"/><rect x="76" y="312" width="28" height="12" rx="6" fill="#222" stroke="#9aa3b2"/></svg>`;
+const frameSvg=p=>`<svg viewBox="0 0 180 370"><rect x="176" y="112" width="6" height="46" rx="2" fill="#7a8392"/><rect x="176" y="172" width="6" height="30" rx="2" fill="#7a8392"/><rect class="h" x="5" y="5" width="170" height="360" rx="24" fill="none" stroke="#8b94a3" stroke-width="10"/></svg>`;
+const dispHtml=()=>`<i></i>12:30`;
+
+/* ---------- Описание деталей ---------- */
+const PARTS=[
+ {k:'disp',n:'Дисплей',e:'🖥️',cover:1,svg:null,t:'Экран закрывает аппарат спереди и принимает касания. В OLED-матрице каждый пиксель светится сам, поэтому чёрный цвет по-настоящему чёрный, а частота обновления определяет плавность прокрутки.',rows:p=>[['Диагональ',p.inch],['Разрешение',p.res],['Частота обновления',p.hz],['Тип матрицы',p.panel]]},
+ {k:'frame',n:'Рамка (корпус)',e:'🧱',svg:frameSvg,t:'Рамка держит все модули вместе, отводит часть тепла и принимает удары на себя. От материала зависят вес и прочность телефона.',rows:p=>[['Материалы',p.mat],['Вес',p.w],['Защита от воды и пыли',p.ip]]},
+ {k:'board',n:'Материнская плата',e:'🧠',svg:boardSvg,t:'Плата соединяет все компоненты. Главный чип (SoC) объединяет процессор, графику, ускоритель для ИИ и часто модем. Рядом работают оперативная память и накопитель.',rows:p=>[['Процессор (SoC)',p.soc],['Оперативная память',p.ram],['Накопитель',p.mem]]},
+ {k:'bat',n:'Аккумулятор',e:'🔋',svg:batSvg,t:'Литий-ионный аккумулятор занимает больше всего места внутри. Ёмкость в мАч показывает запас заряда, а со временем из-за циклов зарядки она постепенно снижается.',rows:p=>[['Ёмкость',p.bat],['Зарядка',p.chg]]},
+ {k:'cam',n:'Камеры',e:'📷',svg:camSvg,t:'Каждый объектив отвечает за свой угол обзора или зум. Затем процессор склеивает несколько кадров, и получается один снимок с хорошей детализацией.',rows:p=>[['Тыловые камеры',p.cams]]},
+ {k:'back',n:'Задняя панель',e:'🪟',cover:1,svg:p=>bodySvg(p,false),t:'Стекло пропускает сигнал беспроводной зарядки и выглядит дороже, пластик легче и меньше боится ударов.',rows:p=>[['Материалы',p.mat],['Защита',p.ip]]}
+];
+const partBy=k=>PARTS.find(x=>x.k===k);
+
+/* ---------- оверлей ---------- */
+const ov=$('#ov'),sheet=$('#sheet');
+function openSheet(html,wide){sheet.className='sheet'+(wide?' wide':'');sheet.innerHTML=html+'<button style="margin-top:6px" onclick="closeSheet()">Закрыть</button>';ov.hidden=false}
+function closeSheet(){ov.hidden=true}
+ov.addEventListener('click',e=>{if(e.target===ov)closeSheet()});
+addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+const tbl=r=>'<table>'+r.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td></tr>`).join('')+'</table>';
+function partInfo(p,k){const d=partBy(k);openSheet(`<div class="em">${d.e}</div><h2>${d.n}</h2><div class="sub">${p.name}</div><p>${d.t}</p>`+tbl(d.rows(p)))}
+
+/* ---------- каталог ---------- */
+let state={q:'',brand:'Все',cmp:[]};
+function list(){
+  stopLoop();
+  const brands=['Все',...new Set(P.map(p=>p.brand))];
+  $('#app').innerHTML=`<div class="tools"><input type="search" id="q" placeholder="Поиск модели…" value="${state.q}">${brands.map(b=>`<button class="chip ${b===state.brand?'on':''}" data-b="${b}">${b}</button>`).join('')}</div><div id="grid"></div><div id="cbar" hidden></div>`;
+  $('#q').oninput=e=>{state.q=e.target.value;draw()};
+  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.brand=c.dataset.b;list()});
+  $('#grid').onclick=e=>{const b=e.target.closest('.cmpb');if(!b)return;e.preventDefault();const id=b.dataset.id,i=state.cmp.indexOf(id);if(i>=0)state.cmp.splice(i,1);else{if(state.cmp.length>=2)state.cmp.shift();state.cmp.push(id)}draw()};
+  draw();
+}
+function draw(){
+  const q=state.q.trim().toLowerCase();
+  const arr=P.filter(p=>(state.brand==='Все'||p.brand===state.brand)&&(p.name+' '+p.brand).toLowerCase().includes(q));
+  $('#grid').innerHTML=arr.length?arr.map((p,i)=>`<a class="tile" href="#/phone/${p.id}" style="animation-delay:${i*40}ms"><div class="pic">${bodySvg(p,true).replace('<svg ','<svg ').replace(/<svg style="position:absolute;inset:0" /,'<svg style="position:absolute;inset:0;height:100%" ')}</div><b>${p.name}</b><span>${p.brand} · ${p.year}</span><button class="cmpb ${state.cmp.includes(p.id)?'on':''}" data-id="${p.id}" title="Сравнить">⇄</button></a>`).join(''):'<p class="sub">Ничего не найдено</p>';
+  document.querySelectorAll('.pic').forEach(el=>{el.style.position='relative';const s=el.querySelectorAll('svg');s.forEach(x=>x.style.cssText='position:absolute;left:50%;top:50%;height:170px;width:auto;transform:translate(-50%,-50%);filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))');if(s[1])s[1].style.filter='none'});
+  const cb=$('#cbar');cb.hidden=!state.cmp.length;
+  cb.innerHTML=`<span>Для сравнения: ${state.cmp.map(id=>byId(id).name).join(' и ')}</span>`+(state.cmp.length==2?'<button class="on" id="goCmp">Сравнить</button>':'<span class="sub" style="margin:0">выберите ещё одну</span>')+'<button id="clrCmp">✕</button>';
+  $('#clrCmp').onclick=()=>{state.cmp=[];draw()};
+  if($('#goCmp'))$('#goCmp').onclick=compare;
+}
+function compare(){
+  const [a,b]=state.cmp.map(byId);
+  const rows=[['Процессор','soc'],['ОЗУ','ram'],['Экран','inch'],['Разрешение','res'],['Частота','hz'],['Батарея','bat'],['Зарядка','chg'],['Камеры','cams'],['Вес','w'],['Защита','ip']];
+  openSheet(`<h2>Сравнение</h2><table><tr><td></td><td><b>${a.name}</b></td><td><b>${b.name}</b></td></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${a[r[1]]}</td><td>${b[r[1]]}</td></tr>`).join('')}</table>`,true);
+}
+
+/* ---------- страница телефона ---------- */
+let raf=0,loopOn=false;
+function stopLoop(){cancelAnimationFrame(raf);loopOn=false}
+function tween(from,to,ms,fn,done){const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);fn(from+(to-from)*e);if(k<1)requestAnimationFrame(f);else done&&done()})(t0)}
+function phonePage(p){
+  stopLoop();
+  const base=PARTS.map(d=>d.k);
+  const order=['disp','frame','board','bat','cam','back'];
+  $('#app').innerHTML=`<a class="back" href="#/">← Все модели</a><div class="dgrid"><section class="card"><div class="stage" id="stage"><div class="phone" id="phone"></div></div><div class="ctrl"><button id="bEx" class="on">Собрать</button><input type="range" id="rEx" min="0" max="100" value="65" aria-label="Степень разборки"><button id="bFlip">Перевернуть</button><button id="bRot">Вращать</button><button id="bQ">🎯 Найди деталь</button></div><div id="qbar" hidden></div><p class="hint">Тяните, чтобы вращать. Двойной клик или двойное касание по детали открывает её характеристики.</p></section><section class="card"><div class="head">${bodySvg(p,true).replace(/<svg style="position:absolute;inset:0" /,'<svg style="position:absolute;inset:0" ')}<div><h1>${p.name}</h1><p class="sub" style="margin:0">${p.brand} · ${p.year}</p></div></div>${tbl([...(p.code?[['Кодовое имя',p.code]]:[]),['Процессор',p.soc],['Память',p.ram+' ОЗУ, '+p.mem],['Экран',`${p.inch}, ${p.res}, ${p.hz}, ${p.panel}`],['Батарея',p.bat],['Зарядка',p.chg],['Камеры',p.cams],['Вес',p.w],['Защита',p.ip],['Корпус',p.mat]])}<div class="parts">${order.map(k=>`<button data-k="${k}">${partBy(k).e} ${partBy(k).n}</button>`).join('')}</div></section></div>`;
+  const head=$('.head');
+  // миниатюра: оборачиваем в контейнер нужного размера
+  const hs=head.querySelectorAll('svg');const w=document.createElement('div');w.style.cssText='position:relative;width:60px;height:120px;flex:none';hs.forEach((s,i)=>{s.style.cssText='position:absolute;inset:0;width:100%;height:100%'+(i?'':';filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))');w.appendChild(s)});head.prepend(w);
+  const ph=$('#phone');
+  order.forEach((k,i)=>{const d=partBy(k),el=document.createElement('div');el.className='layer '+(d.cover?'cover ':'')+(k==='disp'?'box':'');el.dataset.k=k;el.style.setProperty('--i',i);
+    el.innerHTML=k==='disp'?`<div class="disp" style="position:absolute;inset:0;border-radius:26px">${dispHtml()}</div>`:d.svg(p);
+    // у задней панели камеры лежат отдельным слоем: ничего не добавляем
+    ph.appendChild(el)});
+  let rx=-14,ry=-28,ex=.65,flipped=false,auto=false,drag=null,last={k:null,t:0},quiz={on:false,t:null,s:0,n:0};
+  const apply=()=>{ph.style.setProperty('--rx',rx+'deg');ph.style.setProperty('--ry',ry+'deg');ph.style.setProperty('--ex',ex)};
+  apply();
+  const stage=$('#stage'),tip=$('#tip');
+  const layerOf=t=>t&&t.closest?t.closest('.layer'):null;
+  const sel=k=>document.querySelectorAll('.layer').forEach(l=>l.classList.toggle('sel',l.dataset.k===k));
+  stage.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,rx:rx,ry:ry,m:false,l:layerOf(e.target)};stage.setPointerCapture(e.pointerId);tip.style.opacity=0});
+  stage.addEventListener('pointermove',e=>{
+    if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>6)drag.m=true;if(drag.m){ry=drag.ry+dx*.5;rx=Math.max(-85,Math.min(85,drag.rx-dy*.5));apply()}return}
+    const l=layerOf(document.elementFromPoint(e.clientX,e.clientY));
+    if(l&&!quiz.on){const k=l.dataset.k;sel(k);tip.textContent=partBy(k).n;tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY+14+'px';tip.style.opacity=1}else{sel(null);tip.style.opacity=0}});
+  stage.addEventListener('pointerleave',()=>{if(!drag){sel(null);tip.style.opacity=0}});
+  stage.addEventListener('pointerup',e=>{const d=drag;drag=null;if(!d||d.m||!d.l)return;const k=d.l.dataset.k,now=performance.now();
+    if(last.k===k&&now-last.t<420){last={k:null,t:0};activate(k)}else{last={k,t:now};sel(k)}});
+  function activate(k){
+    if(!quiz.on){partInfo(p,k);return}
+    quiz.n++;const good=k===quiz.t;if(good)quiz.s++;
+    const l=document.querySelector(`.layer[data-k=${k}]`);l.classList.add(good?'ok':'bad');setTimeout(()=>l.classList.remove('ok','bad'),700);
+    next(good?'Верно! ':`Это «${partBy(k).n}». `)}
+  function next(pre=''){const ks=order.filter(k=>k!==quiz.t);quiz.t=ks[Math.floor(Math.random()*ks.length)];$('#qbar').innerHTML=`${pre}Найдите: <b>${partBy(quiz.t).n}</b> (двойной клик). Счёт: ${quiz.s} из ${quiz.n}`}
+  $('#bQ').onclick=()=>{quiz.on=!quiz.on;$('#bQ').classList.toggle('on',quiz.on);$('#qbar').hidden=!quiz.on;if(quiz.on){quiz.s=0;quiz.n=0;quiz.t=null;if(ex<.4)tween(ex*100,65,600,v=>{ex=v/100;$('#rEx').value=v;apply()});next()}};
+  $('#rEx').oninput=e=>{ex=e.target.value/100;$('#bEx').textContent=ex>.1?'Собрать':'Разобрать';apply()};
+  $('#bEx').onclick=()=>{const to=ex>.1?0:65;tween(ex*100,to,900,v=>{ex=v/100;$('#rEx').value=v;apply()},()=>{$('#bEx').textContent=to?'Собрать':'Разобрать'})};
+  $('#bFlip').onclick=()=>{flipped=!flipped;const a=ry,b=Math.round(ry/180)*180+180;tween(a,b,900,v=>{ry=v;apply()})};
+  $('#bRot').onclick=()=>{auto=!auto;$('#bRot').classList.toggle('on',auto)};
+  document.querySelectorAll('.parts button').forEach(b=>{b.onclick=()=>partInfo(p,b.dataset.k);b.onmouseenter=()=>sel(b.dataset.k);b.onmouseleave=()=>sel(null)});
+  loopOn=true;(function loop(){if(!loopOn)return;if(auto&&!drag){ry+=.35;apply()}raf=requestAnimationFrame(loop)})();
+}
+
+/* ---------- роутинг ---------- */
+function route(){
+  closeSheet();$('#tip').style.opacity=0;
+  const m=location.hash.match(/^#\/phone\/(.+)$/);
+  const p=m&&byId(m[1]);
+  if(p){phonePage(p);document.title=p.name+' — Телефоны изнутри'}else{list();document.title='Телефоны изнутри'}
+  scrollTo(0,0);
+}
+addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
