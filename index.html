@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Телефоны изнутри</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--text:#14181f;--muted:#667085;--line:#dfe3ea;--accent:#2563eb;--on:#fff;--ok:#16a34a;--err:#dc2626;--shadow:0 6px 24px rgba(20,30,60,.08);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1317;--card:#181e25;--text:#eef2f7;--muted:#98a2b3;--line:#27303a;--accent:#5b9dff;--on:#08111f;--ok:#4ade80;--err:#f87171;--shadow:0 6px 24px rgba(0,0,0,.4);color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header div{max-width:1100px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:10px}
+header a{color:var(--text);text-decoration:none;font-weight:700;font-size:18px}
+main{max-width:1100px;margin:0 auto;padding:20px 18px 90px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+input[type=search]{flex:1 1 220px;font:inherit;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.chip,button{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;transition:all .3s ease}
+.chip.on,button.on{background:var(--accent);color:var(--on);border-color:var(--accent)}
+button:hover{border-color:var(--accent)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.tile{position:relative;display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;text-decoration:none;color:var(--text);overflow:hidden;transition:transform .35s ease,box-shadow .35s ease;animation:pop .5s ease both}
+.tile:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.pic{height:210px;display:grid;place-items:center;background:color-mix(in srgb,var(--text) 5%,var(--card))}
+.pic svg{height:170px;width:auto;filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))}
+.tile b{display:block;padding:12px 14px 0;color:var(--accent);font-size:17px}
+.tile span{display:block;padding:0 14px 14px;color:var(--muted);font-size:14px}
+.cmpb{position:absolute;top:10px;right:10px;padding:6px 10px}
+@keyframes pop{from{opacity:0;transform:translateY(12px)}}
+#cbar[hidden]{display:none}
+#cbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:10px 14px;border-radius:999px}
+.back{display:inline-block;margin-bottom:14px;color:var(--accent);text-decoration:none;font-weight:600}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px}
+@media(max-width:820px){.dgrid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.stage{height:480px;perspective:1400px;display:grid;place-items:center;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;overflow:hidden;border-radius:14px;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)}
+.stage:active{cursor:grabbing}
+.phone{--s:calc(var(--ex) * 60px + 3px);position:relative;width:180px;height:370px;transform-style:preserve-3d;transform:var(--m)}
+.layer{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none;transform:translateZ(calc((var(--i) - 2.5) * (var(--ex) * 60px + 3px)))}
+.layer svg{width:100%;height:100%;overflow:visible;pointer-events:none;display:block}
+.layer svg .h{pointer-events:visiblePainted}
+.layer.cover{opacity:calc(1 - var(--ex) * .55)}
+.layer.box{pointer-events:auto}
+.disp{border-radius:36px;background:linear-gradient(160deg,#0a0e18,#1c2a4a 70%,#26365c);box-shadow:inset 0 0 0 5px #050608,inset 0 0 0 6.5px rgba(255,255,255,.14),inset 0 0 18px rgba(0,0,0,.6),0 0 0 1.5px rgba(255,255,255,.22);display:grid;place-items:center;color:#cfe0ff;font-weight:300;font-size:46px}
+.disp i{position:absolute;top:14px;left:50%;width:13px;height:13px;margin-left:-6px;border-radius:50%;background:#000;box-shadow:inset 0 0 0 2px #1d2230}
+.layer.sel svg,.layer.sel .disp{filter:drop-shadow(0 0 7px var(--accent)) drop-shadow(0 0 3px var(--accent))}
+.layer.ok svg,.layer.ok .disp{filter:drop-shadow(0 0 10px var(--ok))}
+.layer.bad svg,.layer.bad .disp{filter:drop-shadow(0 0 10px var(--err))}
+#tip{position:fixed;z-index:40;pointer-events:none;background:var(--text);color:var(--bg);padding:4px 10px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.ctrl input[type=range]{flex:1 1 120px;accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+#qbar{margin-top:10px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,transparent);font-weight:600}
+h1{margin:0 0 2px;font-size:28px;line-height:1.2}
+.sub{color:var(--muted);margin:0 0 14px}
+.head{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.head svg{height:120px;width:auto;flex:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);width:38%}
+.parts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+#ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .3s ease}
+#ov[hidden]{display:none}
+.sheet{width:100%;max-width:480px;max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;animation:rise .45s cubic-bezier(.22,1,.36,1)}
+.sheet.wide{max-width:680px}
+.sheet h2{margin:0 0 4px;font-size:22px}
+.sheet .em{font-size:40px}
+.sheet p{color:var(--muted);margin:8px 0 12px}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}}
+footer{max-width:1100px;margin:0 auto;padding:0 18px 30px;color:var(--muted);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.disp i.isl{width:48px;height:14px;margin-left:-24px;top:12px;border-radius:9px}
+.clk{text-align:center;transform:translateY(-34px);pointer-events:none}.clk b{display:block;font-size:48px;font-weight:300;line-height:1.1}.clk small{font-size:12px;opacity:.75;text-transform:capitalize}
+.sw{display:flex;gap:10px;margin-top:14px;align-items:center}.sw::before{content:"Цвет:";color:var(--muted);font-size:14px}.dot{width:30px;height:30px;padding:0;border-radius:50%}
+#brk{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));overflow:auto}
+#brk[hidden]{display:none}
+.bbar{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bst{position:relative;width:220px;height:460px;flex:none;touch-action:none;user-select:none;-webkit-user-select:none}
+.bph{position:absolute;inset:0;border-radius:44px;box-shadow:0 20px 40px rgba(0,0,0,.35),inset 0 0 0 2px rgba(255,255,255,.45),inset 0 0 0 5px rgba(0,0,0,.3),inset 0 0 16px rgba(255,255,255,.18);transform-origin:50% 100%}
+.bbend.rol{animation:rol .7s ease}
+.bst canvas{position:absolute;inset:0;pointer-events:none}
+.btools{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:520px}
+.brkb{margin-top:14px;width:100%;background:#dc2626;color:#fff;border-color:#dc2626}
+.bwr.shk{animation:shake .35s}.bst.drp{animation:drp .9s ease-in}
+.glt{animation:glt .12s steps(2) infinite}
+.gl{animation:gl 2.4s ease-in-out infinite}
+@keyframes shake{20%{transform:translate(-7px,3px) rotate(-1.5deg)}40%{transform:translate(6px,-3px) rotate(1.2deg)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+@keyframes drp{0%{transform:translateY(-480px) rotate(14deg)}52%{transform:translateY(0) rotate(0)}68%{transform:translateY(-36px) rotate(-3deg)}84%{transform:none}92%{transform:translateY(-9px)}100%{transform:none}}
+@keyframes rol{50%{transform:scaleY(.4) scaleX(1.2)}}
+@keyframes glt{50%{opacity:.55;transform:translateX(3px)}}
+@keyframes gl{50%{opacity:.35}}
+.bph{overflow:hidden}
+.bbend{position:absolute;inset:0;perspective:900px;transform-origin:50% 100%}
+.bflip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .7s}
+.bface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translateZ(11px)}.bface.b{transform:rotateY(180deg) translateZ(11px)}
+.brim{position:absolute;inset:0;border-radius:44px;border:3px solid;pointer-events:none;transform:translateZ(calc(var(--k) * 20px - 10px))}
+#mw{position:absolute;inset:-12px;border:10px solid #4b5360;border-radius:16px;background:rgba(255,200,90,.14);box-shadow:inset 0 0 40px rgba(255,190,80,.5);pointer-events:none;animation:mwg .4s ease-in-out infinite alternate}#mw[hidden]{display:none}
+#brk.fl{animation:fl .5s}
+@keyframes mwg{to{background:rgba(255,230,140,.3)}}@keyframes fl{0%,30%{background:#fff}}
+.sheet input,.sheet select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);width:100%}
+.sd{position:absolute;pointer-events:none;opacity:max(0,calc(1 - var(--ex) * 12))}
+.sd.t,.sd.b{left:10px;width:160px;height:calc(var(--s) * 5);margin-top:calc(var(--s) * -2.5);transform:rotateX(90deg)}
+.sd.t{top:0}.sd.b{top:370px}
+.sd.l,.sd.r{top:10px;height:350px;width:calc(var(--s) * 5);margin-left:calc(var(--s) * -2.5);transform:rotateY(90deg)}
+.sd.l{left:0}.sd.r{left:180px}
+.disp::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,.14),transparent 40%);pointer-events:none}
+.crease{position:absolute;left:0;right:0;top:50%;height:10px;margin-top:-5px;background:linear-gradient(transparent,rgba(255,255,255,.12),transparent);pointer-events:none}
+.stage{position:relative}.stage::after{content:"";position:absolute;bottom:30px;left:50%;width:150px;height:22px;margin-left:-75px;border-radius:50%;background:rgba(0,0,0,.28);filter:blur(10px);pointer-events:none}
+.wfe{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.7),rgba(255,255,255,.28) 3%,transparent 11%,transparent 89%,rgba(255,255,255,.28) 97%,rgba(0,0,0,.7))}
+.prt{position:absolute;bottom:1px;left:50%;width:34px;height:6px;margin-left:-17px;border-radius:4px;background:#050607;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);z-index:3;pointer-events:none;transition:background .3s}
+.hb{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}.hb.y{transform:rotateY(var(--fd,0deg))}.hb.x{transform:rotateX(var(--fd,0deg))}
+:root[data-theme=dark]{--bg:#0f1317;--card:#181e25;--text:#eef2f7;--muted:#98a2b3;--line:#27303a;--accent:#5b9dff;--on:#08111f;--ok:#4ade80;--err:#f87171;--shadow:0 6px 24px rgba(0,0,0,.4);color-scheme:dark}
+:root[data-theme=light]{color-scheme:light}
+.noanim *{animation:none!important;transition:none!important}
+.crease.v{left:50%;right:auto;top:0;bottom:0;width:10px;height:auto;margin:0 0 0 -5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
+.phone.fd .sd{display:none}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));z-index:200;transform:translate(-50%,-140%);background:var(--card);color:var(--text);border:1px solid var(--accent);box-shadow:var(--shadow);border-radius:16px;padding:10px 16px;font-weight:600;transition:transform .5s cubic-bezier(.22,1,.36,1);max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
+.sd.rim{inset:0;width:auto;height:auto;margin:0;left:0;top:0;border-radius:36px;border:3px solid;background:none;transform:translateZ(calc((var(--k) - .5) * var(--s) * 5))}
+.chg{position:absolute;bottom:70px;left:0;right:0;text-align:center;font-weight:600;font-size:15px;color:#9ef0b6;pointer-events:none;animation:gl 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+<header><div><a href="#/">📱 Телефоны изнутри</a><button id="bAch" style="margin-left:auto">🏆 <span id="ac">0</span></button><button id="bSet">⚙️ Настройки</button></div></header>
+<main id="app"></main>
+<footer>Схемы упрощённые и показывают устройство в общих чертах, а не реальную раскладку конкретной модели. Характеристики справочные: в разных регионах и версиях они могут отличаться, перед покупкой сверяйтесь с сайтом производителя.</footer>
+<div id="ov" hidden><div class="sheet" id="sheet"></div></div>
+<div id="brk" hidden></div>
+<div id="tip"></div>
+<script>
+const $=s=>document.querySelector(s);
+const KEYS='id brand name year c1 c2 lay n soc ram mem inch res hz panel bat chg cams w ip mat code wf'.split(' ');
+const DATA=`pixel8|Google|Pixel 8|2023|#2d3036|#5a606b|bar|2|Google Tensor G3|8 ГБ|128 / 256 ГБ|6,2″|2400×1080|120 Гц|OLED|4575 мАч|27 Вт проводная, 18 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая|187 г|IP68|Алюминиевая рамка, стеклянная задняя панель|shiba
+pixel8pro|Google|Pixel 8 Pro|2023|#7fa6cf|#c5d9ee|bar|3|Google Tensor G3|12 ГБ|128 ГБ – 1 ТБ|6,7″|2992×1344|1–120 Гц|LTPO OLED|5050 мАч|30 Вт проводная, 23 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 48 Мп телефото 5×|213 г|IP68|Алюминиевая рамка, стеклянная задняя панель|husky
+pixel8a|Google|Pixel 8a|2024|#7ab98a|#c6e6cf|bar|2|Google Tensor G3|8 ГБ|128 / 256 ГБ|6,1″|2400×1080|120 Гц|OLED|4492 мАч|18 Вт проводная, 7,5 Вт беспроводная|64 Мп основная + 13 Мп ультраширокая|188 г|IP67|Алюминиевая рамка, пластиковая задняя панель|akita
+pixel7|Google|Pixel 7|2022|#cfd1cc|#f0f1ee|bar|2|Google Tensor G2|8 ГБ|128 / 256 ГБ|6,3″|2400×1080|90 Гц|OLED|4355 мАч|20 Вт проводная|50 Мп основная + 12 Мп ультраширокая|197 г|IP68|Алюминиевая рамка, стеклянная задняя панель|panther
+s24|Samsung|Galaxy S24|2024|#8a7ec0|#cfc7f0|col|3|Exynos 2400 или Snapdragon 8 Gen 3 (зависит от региона)|8 ГБ|128 / 256 / 512 ГБ|6,2″|2340×1080|1–120 Гц|Dynamic AMOLED 2X|4000 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|167 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+s23|Samsung|Galaxy S23|2023|#e3d3bf|#f6ede2|col|3|Snapdragon 8 Gen 2 for Galaxy|8 ГБ|128 / 256 / 512 ГБ|6,1″|2340×1080|120 Гц|Dynamic AMOLED 2X|3900 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|168 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph15|Apple|iPhone 15|2023|#f0c7d0|#fbe4e9|sq|2|Apple A16 Bionic|6 ГБ|128 / 256 / 512 ГБ|6,1″|2556×1179|60 Гц|Super Retina XDR OLED|3349 мАч|USB‑C, MagSafe до 15 Вт|48 Мп основная + 12 Мп ультраширокая|171 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph15pro|Apple|iPhone 15 Pro|2023|#6e7078|#b9bbc2|sq|3|Apple A17 Pro|8 ГБ|128 ГБ – 1 ТБ|6,1″|2556×1179|1–120 Гц|LTPO Super Retina XDR OLED|3274 мАч|USB‑C (USB 3), MagSafe до 15 Вт|48 Мп основная + 12 Мп ультраширокая + 12 Мп телефото 3×|187 г|IP68|Титановая рамка, матовая стеклянная задняя панель|
+op12|OnePlus|OnePlus 12|2024|#1f6b55|#4aa27f|round|3|Snapdragon 8 Gen 3|12 / 16 ГБ|256 / 512 ГБ|6,82″|3168×1440|1–120 Гц|LTPO AMOLED|5400 мАч|100 Вт проводная, 50 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 64 Мп телефото 3×|220 г|IP65|Алюминиевая рамка, стеклянная задняя панель|
+mi13|Xiaomi|Xiaomi 13|2022|#2b5d8a|#6fa3d3|round|3|Snapdragon 8 Gen 2|8 / 12 ГБ|128 – 512 ГБ|6,36″|2400×1080|120 Гц|AMOLED|4500 мАч|67 Вт проводная, 50 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3,2×|189 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+nothing2|Nothing|Phone (2)|2023|#d9dde2|#f4f6f8|dual|2|Snapdragon 8+ Gen 1|8 / 12 ГБ|128 / 256 / 512 ГБ|6,7″|2412×1080|1–120 Гц|LTPO OLED|4700 мАч|45 Вт проводная, 15 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая|201 г|IP54|Алюминиевая рамка, прозрачная стеклянная панель со светодиодами Glyph|
+fp5|Fairphone|Fairphone 5|2023|#3a3f46|#7a828d|dual|2|Qualcomm QCM6490|8 ГБ|256 ГБ|6,46″|2770×1224|90 Гц|OLED|4200 мАч (съёмная)|30 Вт проводная|50 Мп основная + 50 Мп ультраширокая|212 г|IP55|Модульный корпус со съёмной задней панелью и батареей|
+pixel9|Google|Pixel 9|2024|#e8b7c4|#f8dde5|island|2|Google Tensor G4|12 ГБ|128 / 256 ГБ|6,3″|2424×1080|60–120 Гц|OLED|4700 мАч|27 Вт проводная, 15 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая|198 г|IP68|Алюминиевая рамка, стеклянная задняя панель|tokay
+pixel9pro|Google|Pixel 9 Pro|2024|#8d8f8a|#d4d6d0|island|3|Google Tensor G4|16 ГБ|128 ГБ – 1 ТБ|6,3″|2856×1280|1–120 Гц|LTPO OLED|4700 мАч|27 Вт проводная, 21 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 48 Мп телефото 5×|199 г|IP68|Алюминиевая рамка, матовая стеклянная задняя панель|caiman
+pixel9proxl|Google|Pixel 9 Pro XL|2024|#e0d9cc|#f4f0e8|island|3|Google Tensor G4|16 ГБ|128 ГБ – 1 ТБ|6,8″|2992×1344|1–120 Гц|LTPO OLED|5060 мАч|37 Вт проводная, 21 Вт беспроводная|50 Мп основная + 48 Мп ультраширокая + 48 Мп телефото 5×|221 г|IP68|Алюминиевая рамка, матовая стеклянная задняя панель|komodo
+pixel10|Google|Pixel 10|2025|#4a5a7a|#9fb2d4|island|3|Google Tensor G5|12 ГБ|128 / 256 ГБ|6,3″|2424×1080|60–120 Гц|OLED|4970 мАч|29 Вт проводная, Qi2 до 15 Вт|48 Мп основная + 13 Мп ультраширокая + 10,8 Мп телефото 5×|204 г|IP68|Алюминиевая рамка, стеклянная задняя панель|frankel
+s25|Samsung|Galaxy S25|2025|#4b6a8f|#9cb8d6|col|3|Snapdragon 8 Elite for Galaxy|12 ГБ|128 / 256 / 512 ГБ|6,2″|2340×1080|1–120 Гц|Dynamic AMOLED 2X|4000 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|162 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+s25ultra|Samsung|Galaxy S25 Ultra|2025|#6f7681|#b4bac4|col|4|Snapdragon 8 Elite for Galaxy|12 / 16 ГБ|256 ГБ – 1 ТБ|6,9″|3120×1440|1–120 Гц|Dynamic AMOLED 2X|5000 мАч|45 Вт проводная, 15 Вт беспроводная|200 Мп основная + 50 Мп ультраширокая + 10 Мп телефото 3× + 50 Мп телефото 5×|218 г|IP68|Титановая рамка, стеклянная задняя панель|
+s24ultra|Samsung|Galaxy S24 Ultra|2024|#8b8a86|#cdccc6|col|4|Snapdragon 8 Gen 3 for Galaxy|12 ГБ|256 ГБ – 1 ТБ|6,8″|3120×1440|1–120 Гц|Dynamic AMOLED 2X|5000 мАч|45 Вт проводная, 15 Вт беспроводная|200 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3× + 50 Мп телефото 5×|232 г|IP68|Титановая рамка, стеклянная задняя панель|
+a55|Samsung|Galaxy A55 5G|2024|#6c7fbf|#b6c2ee|col|3|Exynos 1480|8 / 12 ГБ|128 / 256 ГБ|6,6″|2340×1080|120 Гц|Super AMOLED|5000 мАч|25 Вт проводная|50 Мп основная + 12 Мп ультраширокая + 5 Мп макро|213 г|IP67|Металлическая рамка, стеклянная задняя панель|
+iph14|Apple|iPhone 14|2022|#3b4a8a|#8b9bd6|sq|2|Apple A15 Bionic|6 ГБ|128 / 256 / 512 ГБ|6,1″|2532×1170|60 Гц|Super Retina XDR OLED|3279 мАч|Lightning, MagSafe до 15 Вт|12 Мп основная + 12 Мп ультраширокая|172 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph16|Apple|iPhone 16|2024|#2f6f73|#8dc7c9|pill|2|Apple A18|8 ГБ|128 / 256 / 512 ГБ|6,1″|2556×1179|60 Гц|Super Retina XDR OLED|3561 мАч (по данным разборок)|USB‑C, MagSafe до 25 Вт|48 Мп основная + 12 Мп ультраширокая|170 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+iph16pro|Apple|iPhone 16 Pro|2024|#8c7f6e|#d7ccbb|sq|3|Apple A18 Pro|8 ГБ|128 ГБ – 1 ТБ|6,3″|2622×1206|1–120 Гц|LTPO Super Retina XDR OLED|3582 мАч (по данным разборок)|USB‑C (USB 3), MagSafe до 25 Вт|48 Мп основная + 48 Мп ультраширокая + 12 Мп телефото 5×|199 г|IP68|Титановая рамка, матовая стеклянная задняя панель|
+iph16e|Apple|iPhone 16e|2025|#e9e9ec|#ffffff|one|1|Apple A18|8 ГБ|128 / 256 / 512 ГБ|6,1″|2532×1170|60 Гц|Super Retina XDR OLED|4005 мАч (по данным разборок)|USB‑C, Qi до 7,5 Вт|48 Мп основная|167 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+op13|OnePlus|OnePlus 13|2025|#1c2a3a|#4a6a8a|round|3|Snapdragon 8 Elite|12 / 16 / 24 ГБ|256 ГБ – 1 ТБ|6,82″|3168×1440|1–120 Гц|LTPO AMOLED|6000 мАч|100 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3×|213 г|IP68 / IP69|Алюминиевая рамка, стеклянная задняя панель|
+mi14|Xiaomi|Xiaomi 14|2023|#2f5e4a|#7fb59c|round|3|Snapdragon 8 Gen 3|12 ГБ|256 / 512 ГБ|6,36″|2670×1200|1–120 Гц|LTPO AMOLED|4610 мАч|90 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3,2×|193 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+mi14ultra|Xiaomi|Xiaomi 14 Ultra|2024|#2a2d33|#6b717c|round|4|Snapdragon 8 Gen 3|12 / 16 ГБ|256 / 512 ГБ|6,73″|3200×1440|1–120 Гц|LTPO AMOLED|5000 мАч|90 Вт проводная, 80 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3,2× + 50 Мп телефото 5×|220 г|IP68|Алюминиевая рамка, стекло или экокожа|
+mi15|Xiaomi|Xiaomi 15|2024|#cfd5da|#f3f6f8|round|3|Snapdragon 8 Elite|12 ГБ|256 / 512 ГБ|6,36″|2670×1200|1–120 Гц|LTPO AMOLED|5240 мАч|90 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3×|191 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+nothing3|Nothing|Phone (3)|2025|#e6e8ea|#ffffff|dual|3|Snapdragon 8s Gen 4|12 / 16 ГБ|256 / 512 ГБ|6,67″|2800×1260|1–120 Гц|LTPO AMOLED|5150 мАч|65 Вт проводная, 15 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3×|218 г|IP68|Алюминиевая рамка, стеклянная задняя панель с Glyph Matrix|
+nothing2a|Nothing|Phone (2a)|2024|#e8e6e1|#faf9f6|dual|2|MediaTek Dimensity 7200 Pro|8 / 12 ГБ|128 / 256 ГБ|6,7″|2412×1084|120 Гц|AMOLED|5000 мАч|45 Вт проводная|50 Мп основная + 50 Мп ультраширокая|190 г|IP54|Стеклянная задняя панель, полупрозрачный дизайн|
+xp1vi|Sony|Xperia 1 VI|2024|#4a4f57|#9aa1ad|col|3|Snapdragon 8 Gen 3|12 / 16 ГБ|256 / 512 ГБ|6,5″|2340×1080|1–120 Гц|LTPO OLED|5000 мАч|30 Вт проводная, 15 Вт беспроводная|48 Мп основная + 12 Мп ультраширокая + 12 Мп телефото 3,5–7,1×|192 г|IP65 / IP68|Алюминиевая рамка, матовое стекло|
+rog8|Asus|ROG Phone 8 Pro|2024|#1a1c20|#4a4e57|pill|3|Snapdragon 8 Gen 3|24 ГБ|1 ТБ|6,78″|2400×1080|1–165 Гц|LTPO AMOLED|5500 мАч|65 Вт проводная, 15 Вт беспроводная|50 Мп основная + 13 Мп ультраширокая + 32 Мп телефото 3×|225 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+magic6pro|Honor|Magic6 Pro|2024|#2b4f6f|#7aa7c9|round|3|Snapdragon 8 Gen 3|12 ГБ|512 ГБ|6,8″|2800×1280|1–120 Гц|LTPO OLED|5600 мАч|80 Вт проводная, 66 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 180 Мп телефото 2,5×|225 г|IP68|Металлическая рамка, стеклянная задняя панель||1
+vivox100pro|Vivo|X100 Pro|2023|#2b3a67|#7f93d6|round|3|MediaTek Dimensity 9300|16 ГБ|512 ГБ|6,78″|2800×1260|1–120 Гц|LTPO AMOLED|5400 мАч|100 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 4,3×|225 г|IP68|Алюминиевая рамка, стеклянная задняя панель|
+findx7u|Oppo|Find X7 Ultra|2024|#7a5b3a|#d1b08a|round|4|Snapdragon 8 Gen 3|16 ГБ|256 / 512 ГБ|6,82″|3168×1440|1–120 Гц|LTPO AMOLED|5000 мАч|100 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3× + 50 Мп телефото 6×|221 г|IP68|Алюминиевая рамка, кожа или стекло|
+pura70u|Huawei|Pura 70 Ultra|2024|#2f3a4a|#7c8da6|round|3|Kirin 9010|16 ГБ|512 ГБ / 1 ТБ|6,8″|2844×1260|1–120 Гц|LTPO OLED|5200 мАч|100 Вт проводная, 80 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 50 Мп телефото 3,5×|226 г|IP68|Металлическая рамка, стеклянная или кожаная панель||1
+pocof6p|Poco|Poco F6 Pro|2024|#1d1f24|#5b606b|sq|3|Snapdragon 8 Gen 2|12 / 16 ГБ|256 / 512 ГБ / 1 ТБ|6,67″|3200×1440|120 Гц|AMOLED|5000 мАч|120 Вт проводная|50 Мп основная + 8 Мп ультраширокая + 2 Мп макро|209 г|Нет данных|Пластиковая рамка, стеклянная задняя панель|
+rn13pp|Redmi|Redmi Note 13 Pro+ 5G|2023|#6a4aa8|#b9a2e8|round|3|MediaTek Dimensity 7200 Ultra|8 / 12 ГБ|256 / 512 ГБ|6,67″|2712×1220|120 Гц|AMOLED|5000 мАч|120 Вт проводная|200 Мп основная + 8 Мп ультраширокая + 2 Мп макро|204 г|IP68|Пластиковая рамка, стеклянная задняя панель|
+edge50u|Motorola|Edge 50 Ultra|2024|#5b4a3a|#b49a80|round|3|Snapdragon 8s Gen 3|12 ГБ|512 ГБ|6,7″|2712×1220|1–144 Гц|pOLED|4500 мАч|125 Вт проводная, 50 Вт беспроводная|50 Мп основная + 50 Мп ультраширокая + 64 Мп телефото 3×|197 г|IP68|Алюминиевая рамка, задняя панель из дерева или экокожи|
+iph4|Apple|iPhone 4|2010|#1b1b1d|#55565c|one|1|Apple A4|512 МБ|16 / 32 ГБ|3,5″|960×640|60 Гц|IPS LCD (Retina)|1420 мАч|Разъём 30 pin|5 Мп основная|137 г|Нет|Стальная рамка, стеклянные панели|N90
+iph6|Apple|iPhone 6|2014|#c9ccd1|#eceef1|one|1|Apple A8|1 ГБ|16 / 64 / 128 ГБ|4,7″|1334×750|60 Гц|IPS LCD (Retina HD)|1810 мАч|Lightning|8 Мп основная|129 г|Нет|Алюминиевый корпус|
+iphx|Apple|iPhone X|2017|#2a2c31|#6a6e78|pill|2|Apple A11 Bionic|3 ГБ|64 / 256 ГБ|5,8″|2436×1125|60 Гц|Super Retina OLED|2716 мАч|Lightning, Qi до 7,5 Вт|12 Мп основная + 12 Мп телефото 2×|174 г|IP67|Стальная рамка, стеклянные панели|
+s3|Samsung|Galaxy S III|2012|#2f5fa0|#9ec0ee|one|1|Exynos 4412|1 ГБ|16 / 32 / 64 ГБ|4,8″|1280×720|60 Гц|Super AMOLED|2100 мАч (съёмная)|micro-USB|8 Мп основная|133 г|Нет|Пластиковый корпус|
+s6|Samsung|Galaxy S6|2015|#2d3138|#7a8190|one|1|Exynos 7420|3 ГБ|32 / 64 / 128 ГБ|5,1″|2560×1440|60 Гц|Super AMOLED|2550 мАч|Проводная и беспроводная зарядка|16 Мп основная|138 г|Нет|Металлическая рамка, стеклянные панели|
+s8|Samsung|Galaxy S8|2017|#3a4a8a|#8da0e0|one|1|Exynos 8895 или Snapdragon 835|4 ГБ|64 ГБ|5,8″|2960×1440|60 Гц|Super AMOLED|3000 мАч|USB‑C, быстрая проводная и беспроводная|12 Мп основная|155 г|IP68|Металлическая рамка, стеклянные панели|
+nexus5|Google|Nexus 5|2013|#1d1d1f|#4a4b50|one|1|Snapdragon 800|2 ГБ|16 / 32 ГБ|4,95″|1920×1080|60 Гц|IPS LCD|2300 мАч|micro-USB, беспроводная Qi|8 Мп основная|130 г|Нет|Пластиковый корпус (производитель LG)|hammerhead
+htcm8|HTC|One (M8)|2014|#7d8084|#c9ccd0|col|2|Snapdragon 801|2 ГБ|16 / 32 ГБ|5,0″|1920×1080|60 Гц|Super LCD 3|2600 мАч|micro-USB|4 Мп UltraPixel + 2 Мп датчик глубины|160 г|Нет|Цельнометаллический корпус|
+xperiaz|Sony|Xperia Z|2013|#1b1c20|#52545c|one|1|Snapdragon S4 Pro|2 ГБ|16 ГБ|5,0″|1920×1080|60 Гц|TFT|2330 мАч|micro-USB|13 Мп основная|146 г|IP57|Стеклянные панели, пластиковая рамка|
+lumia1020|Nokia|Lumia 1020|2013|#e8c733|#f7e68a|one|1|Snapdragon S4|2 ГБ|32 ГБ|4,5″|1280×768|60 Гц|AMOLED|2000 мАч|micro-USB|41 Мп основная|158 г|Нет|Поликарбонатный корпус|
+p20pro|Huawei|P20 Pro|2018|#2a4a7a|#8f5fd0|col|3|Kirin 970|6 ГБ|128 ГБ|6,1″|2240×1080|60 Гц|OLED|4000 мАч|22,5 Вт проводная|40 Мп основная + 20 Мп монохромная + 8 Мп телефото 3×|180 г|IP67|Металлическая рамка, стеклянные панели|
+zfold6|Samsung|Galaxy Z Fold6|2024|#3b4a6b|#9aa9cc|colf|3|Snapdragon 8 Gen 3 for Galaxy|12 ГБ|256 / 512 ГБ / 1 ТБ|7,6″ (внешний 6,3″)|2160×1856 (внешний 2376×968)|1–120 Гц|Dynamic AMOLED 2X|4400 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|239 г|IP48|Алюминиевая рамка Armor, стекло Gorilla Glass Victus 2|
+zfold7|Samsung|Galaxy Z Fold7|2025|#2f4f86|#9db7e3|colf|3|Snapdragon 8 Elite for Galaxy|12 / 16 ГБ|256 / 512 ГБ / 1 ТБ|8,0″ (внешний 6,5″)|2184×1968 (внешний 2520×1080)|1–120 Гц|Dynamic AMOLED 2X|4400 мАч|25 Вт проводная, 15 Вт беспроводная|200 Мп основная + 12 Мп ультраширокая + 10 Мп телефото 3×|215 г|IP48|Алюминиевая рамка Armor, очень тонкий складной корпус|
+zflip6|Samsung|Galaxy Z Flip6|2024|#c9b8e8|#eee6fa|flip|2|Snapdragon 8 Gen 3 for Galaxy|12 ГБ|256 / 512 ГБ|6,7″ (внешний 3,4″)|2640×1080 (внешний 720×748)|1–120 Гц|Dynamic AMOLED 2X|4000 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая|187 г|IP48|Алюминиевая рамка Armor, стекло Gorilla Glass Victus 2|
+zflip7|Samsung|Galaxy Z Flip7|2025|#c94a45|#f09a94|flip|2|Exynos 2500|12 ГБ|256 / 512 ГБ|6,9″ (внешний 4,1″)|2520×1080 (внешний 1048×948)|1–120 Гц|Dynamic AMOLED 2X|4300 мАч|25 Вт проводная, 15 Вт беспроводная|50 Мп основная + 12 Мп ультраширокая|188 г|IP48|Алюминиевая рамка Armor, стекло Gorilla Glass Victus 2|
+opace3|OnePlus|OnePlus Ace 3|2024|#2d4a7a|#7da2d9|round|3|Snapdragon 8 Gen 2|12 / 16 / 24 ГБ|256 / 512 ГБ / 1 ТБ|6,78″|2780×1264|1–120 Гц|LTPO OLED|5500 мАч|100 Вт проводная|50 Мп основная + 8 Мп ультраширокая + 2 Мп макро|207 г|IP65|Металлическая рамка, стеклянная задняя панель|
+opace3pro|OnePlus|OnePlus Ace 3 Pro|2024|#1f3b2f|#6aa68a|round|3|Snapdragon 8 Gen 3|16 / 24 ГБ|256 ГБ – 1 ТБ|6,78″|2780×1264|1–120 Гц|LTPO OLED|6100 мАч|100 Вт проводная|50 Мп основная + 8 Мп ультраширокая + 2 Мп макро|220 г|IP65|Металлическая рамка, стеклянная задняя панель|
+vivonex3|Vivo|NEX 3|2019|#1d2b44|#5a86c8|col|3|Snapdragon 855 Plus|8 / 12 ГБ|256 / 512 ГБ|6,89″|2256×1080|60 Гц|Super AMOLED, «водопад»|4500 мАч|44 Вт проводная|64 Мп основная + 13 Мп ультраширокая + 13 Мп портретная|218 г|Нет|Стеклянные панели, металлическая рамка||1
+mate30pro|Huawei|Mate 30 Pro|2019|#2a2f3a|#6a7488|round|4|Kirin 990|8 ГБ|128 / 256 ГБ|6,53″|2400×1176|60 Гц|OLED Horizon («водопад»)|4500 мАч|40 Вт проводная, 27 Вт беспроводная|40 Мп основная + 40 Мп сверхширокая + 8 Мп телефото 3× + датчик ToF|198 г|IP68|Стеклянные панели, металлическая рамка||1
+mate20pro|Huawei|Mate 20 Pro|2018|#3b2f66|#8f7fd6|sq|3|Kirin 980|6 / 8 ГБ|128 / 256 ГБ|6,39″|3120×1440|60 Гц|OLED с изогнутыми краями|4200 мАч|40 Вт проводная, 15 Вт беспроводная|40 Мп основная + 20 Мп ультраширокая + 8 Мп телефото 3×|189 г|IP68|Стеклянные панели, металлическая рамка||1
+s7edge|Samsung|Galaxy S7 edge|2016|#b8a86a|#e6dca8|one|1|Exynos 8890 или Snapdragon 820|4 ГБ|32 / 64 ГБ|5,5″|2560×1440|60 Гц|Super AMOLED, двойной изгиб|3600 мАч|micro-USB, быстрая проводная и беспроводная|12 Мп основная|157 г|IP68|Металлическая рамка, стеклянные панели||1
+honx9b|Honor|X9b|2023|#2a5aa8|#7fb0f0|round|3|Snapdragon 6 Gen 1|8 / 12 ГБ|256 ГБ|6,78″|2652×1200|120 Гц|AMOLED, изогнутый|5800 мАч|35 Вт проводная|108 Мп основная + 5 Мп ультраширокая + 2 Мп глубина|185 г|IP53|Нет данных||1
+honx9c|Honor|X9c|2024|#c9a255|#efd89a|round|2|Snapdragon 6 Gen 1|8 / 12 ГБ|256 / 512 ГБ|6,78″|2652×1200|120 Гц|AMOLED, изогнутый|6600 мАч|66 Вт проводная|108 Мп основная + 5 Мп ультраширокая|189 г|IP65M|Нет данных||1
+honx8b|Honor|X8b|2024|#3b3f4a|#8a90a0|round|2|Snapdragon 680|8 ГБ|256 / 512 ГБ|6,7″|2412×1080|90 Гц|AMOLED|4500 мАч|35 Вт проводная|108 Мп основная + 5 Мп ультраширокая|166 г|Нет данных|Нет данных|`;
+const P=DATA.split('\n').map(l=>{const a=l.split('|'),o={};KEYS.forEach((k,i)=>o[k]=a[i]);o.n=+o.n;return o});
+try{JSON.parse(localStorage.getItem('customPhones')||'[]').forEach(o=>P.push(o))}catch(e){}
+const byId=id=>P.find(p=>p.id===id);
+
+/* ---------- SVG-детали ---------- */
+let uid=0;
+const SW=[['Чёрный','#2a2d33','#5a5f68'],['Белый','#cfd3d9','#f4f5f7'],['Синий','#2b5d9e','#79a8e6'],['Зелёный','#2f7a5b','#7ccaa3'],['Розовый','#d98aa5','#f8d5e0'],['Золото','#b08a4a','#ecd49b']];
+let wpI=0;const WP=[0,'linear-gradient(160deg,#ff9a8b,#ff6a88 45%,#8e2de2)','linear-gradient(160deg,#0f2027,#2c5364)','linear-gradient(160deg,#f6d365,#fda085)','linear-gradient(160deg,#134e5e,#71b280)'];
+const dispBg=p=>wpI?WP[wpI]:`linear-gradient(160deg,#05070d,color-mix(in srgb,${p.c1} 45%,#0a0e18))`;
+const short=t=>t.split(/ или | for /)[0];
+const lens=(x,y,r=15)=>{const g='l'+(++uid);return `<defs><radialGradient id="${g}" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#5d7aa8"/><stop offset=".35" stop-color="#1a2438"/><stop offset="1" stop-color="#05070b"/></radialGradient><linearGradient id="${g}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9edf3"/><stop offset=".5" stop-color="#6f7886"/><stop offset="1" stop-color="#2b313b"/></linearGradient></defs><circle cx="${x}" cy="${y+1.5}" r="${r+2}" fill="rgba(0,0,0,.35)"/><circle class="h" cx="${x}" cy="${y}" r="${r}" fill="url(#${g}r)"/><circle cx="${x}" cy="${y}" r="${r*.82}" fill="#0b0d12"/><circle cx="${x}" cy="${y}" r="${r*.66}" fill="url(#${g})"/><circle cx="${x}" cy="${y}" r="${r*.3}" fill="#0a0f1a" stroke="#31405c" stroke-width=".8"/><ellipse cx="${x-r*.25}" cy="${y-r*.3}" rx="${r*.2}" ry="${r*.12}" fill="#fff" opacity=".55" transform="rotate(-35 ${x-r*.25} ${y-r*.3})"/><circle cx="${x+r*.22}" cy="${y+r*.25}" r="${r*.08}" fill="#8ab4ff" opacity=".6"/>`};
+const flash=(x,y)=>`<circle cx="${x}" cy="${y}" r="4.5" fill="#f3ecd2" stroke="#7b808a"/>`;
+const plate=(x,y,w,h,r,f='#14171d')=>`<rect class="h" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" stroke="rgba(255,255,255,.28)" stroke-width="1.5"/>`;
+function camSvg(p){
+  const n=p.n,L=p.lay,pts=a=>a.map(([x,y,r])=>lens(x,y,r||15)).join('');let s='';
+  const row=(f)=>[...Array(n)].map((_,i)=>f(i));
+  if(L==='bar')s=`<rect class="h" x="-2" y="40" width="184" height="54" fill="#13161b"/><rect x="-2" y="40" width="184" height="2" fill="rgba(255,255,255,.18)"/>`+pts(row(i=>[n==3?46+i*44:62+i*54,67]))+flash(n==3?164:150,67);
+  else if(L==='island')s=plate(14,34,152,60,30)+pts(row(i=>[n==3?46+i*38:58+i*40,64,14]))+flash(n==3?148:134,64);
+  else if(L==='col'||L==='colf')s=pts(row(i=>[40,n==4?36+i*38:44+i*42,n==4?14:15]))+flash(70,40);
+  else if(L==='flip')s=`<rect class="h" x="70" y="14" width="96" height="62" rx="14" fill="#06080c" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/><path d="M76 20h60l-26 52H76z" fill="#fff" opacity=".07"/><text x="118" y="55" text-anchor="middle" font-size="20" fill="#cfe0ff" font-weight="300">12:30</text>`+pts([[38,32,11],[38,62,11]])+flash(54,47);
+  else if(L==='sq'){const Q=n==2?[[38,42,17],[66,90,17]]:[[48,46,17],[48,92,17],[86,69,17]];s=plate(14,14,n==2?84:108,n==2?116:112,24,'#171a20')+pts(Q.slice(0,n))+flash(n==2?72:100,34)}
+  else if(L==='pill'){const ys=n==3?[40,70,100]:[46,90];s=plate(14,14,64,n==3?122:108,30,'#15181e')+pts(ys.map(y=>[46,y,n==3?13:16]))+flash(94,30)}
+  else if(L==='one')s=plate(16,16,60,64,18,'#15181e')+lens(46,48,17)+flash(92,30);
+  else if(L==='round'){const Q=n==2?[[64,42],[64,86]]:n==3?[[44,46],[44,84],[82,66]]:[[44,44],[82,44],[44,84],[82,84]];s=`<circle class="h" cx="64" cy="64" r="50" fill="#16191f" stroke="rgba(255,255,255,.3)" stroke-width="2"/><circle cx="64" cy="64" r="44" fill="none" stroke="#2c323c" stroke-width="1.5"/>`+pts(Q.slice(0,n).map(([x,y])=>[x,y,n==4?16:15]))+flash(n==4?140:126,40)}
+  else{const Q=n==3?[[40,44,14],[40,88,14],[74,66,12]]:[[46,50,14],[46,92,14]];s=plate(14,16,n==3?84:64,n==3?100:106,20,'rgba(20,22,26,.4)')+pts(Q.slice(0,n))}
+  return `<svg viewBox="0 0 180 370">${s}</svg>`;
+}
+function bodySvg(p,withCam){
+  const g='g'+(++uid);
+  const hg=(p.lay==='flip'?`<rect x="0" y="176" width="180" height="16" fill="rgba(0,0,0,.28)"/><rect x="0" y="176" width="180" height="1.5" fill="rgba(255,255,255,.4)"/><rect x="0" y="190" width="180" height="1.5" fill="rgba(255,255,255,.3)"/>`:p.lay==='colf'?`<rect x="85" y="0" width="10" height="370" fill="rgba(0,0,0,.22)"/><path d="M90 0V370" stroke="rgba(255,255,255,.4)"/>`:'')+(p.wf?`<defs><linearGradient id="${g}w" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset=".12" stop-color="#fff" stop-opacity="0"/><stop offset=".88" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient></defs><rect width="180" height="370" rx="36" fill="url(#${g}w)"/>`:'');
+  if(p.brand==='Nothing')return nothingSvg(p)+(withCam?camSvg(p).replace('<svg ','<svg style="position:absolute;inset:0" '):'');
+  return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.c2}"/><stop offset="1" stop-color="${p.c1}"/></linearGradient><linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient><linearGradient id="${g}e" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".5" stop-color="#fff" stop-opacity=".15"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></linearGradient><clipPath id="${g}c"><rect width="180" height="370" rx="36"/></clipPath></defs><rect class="h" width="180" height="370" rx="36" fill="url(#${g})"/><g clip-path="url(#${g}c)"><rect width="180" height="370" fill="url(#${g}s)"/><path d="M-10 250L190 120V190L-10 330Z" fill="#fff" opacity=".07"/>${hg}</g><rect x="1" y="1" width="178" height="368" rx="35" fill="none" stroke="url(#${g}e)" stroke-width="2"/><rect x="3.5" y="3.5" width="173" height="363" rx="32.5" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.2"/><text x="90" y="338" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="4" fill="#fff" opacity=".4">${p.brand.toUpperCase()}</text></svg>`
+   +(withCam?camSvg(p).replace('<svg ','<svg style="position:absolute;inset:0" '):'');
+}
+const nothingSvg=p=>{const g='n'+(++uid),gl='<path d="M24 150v80M158 140v40M62 346h56M118 312a40 40 0 0 1-56 0"/>';return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#cfd6e0" stop-opacity=".14"/></linearGradient><filter id="${g}f"><feGaussianBlur stdDeviation="3"/></filter></defs><rect class="h" width="180" height="370" rx="36" fill="url(#${g})" stroke="rgba(120,130,150,.7)" stroke-width="1.5"/><g fill="none" stroke="#9aa3b2" opacity=".8"><circle cx="90" cy="236" r="48"/><circle cx="90" cy="236" r="40" stroke="#d98a2b"/><circle cx="90" cy="236" r="32"/><circle cx="90" cy="236" r="24" stroke="#d98a2b"/><circle cx="90" cy="236" r="16"/><path d="M20 140h140M20 150h96M112 20v110M26 330h128"/><rect x="40" y="160" width="40" height="12" rx="2"/><rect x="100" y="160" width="38" height="12" rx="2"/></g><g fill="#9aa3b2" opacity=".85"><circle cx="30" cy="28" r="3"/><circle cx="150" cy="28" r="3"/><circle cx="30" cy="340" r="3"/><circle cx="150" cy="340" r="3"/></g><circle cx="132" cy="30" r="2.6" fill="#ff3b30"/><g class="gl" fill="none" stroke-linecap="round"><g stroke="#8fd3ff" stroke-width="9" opacity=".5" filter="url(#${g}f)">${gl}</g><g stroke="#fff" stroke-width="3">${gl}</g></g><text x="90" y="312" text-anchor="middle" font-size="9" letter-spacing="3" fill="#6b7380" opacity=".8">NOTHING</text></svg>`};
+const batSvg=p=>{const g='t'+(++uid);return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#59627a"/><stop offset="1" stop-color="#2a303f"/></linearGradient></defs><rect x="76" y="132" width="28" height="12" rx="2" fill="#d6a649"/><rect class="h" x="38" y="142" width="104" height="164" rx="12" fill="url(#${g})" stroke="#9aa3b3" stroke-width="2"/><path d="M92 170l-16 26h11l-5 22 18-30H89z" fill="#ffd54a"/><text x="90" y="246" text-anchor="middle" fill="#eef2f8" font-size="13" font-weight="700">Li‑ion</text><text x="90" y="264" text-anchor="middle" fill="#c4ccdb" font-size="11">${p.bat.split(' (')[0]}</text></svg>`};
+const boardSvg=p=>{const w=short(p.soc).replace(/^(Google|Apple|Qualcomm|MediaTek) /,'').split(' '),k=Math.ceil(w.length/2),a=w.slice(0,k).join(' '),b=w.slice(k).join(' '),g='b'+(++uid);
+  const chip=(x,y,w,h,t1,t2)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#2b3038" stroke="#aeb6c4"/><text x="${x+w/2}" y="${y+h/2+(t2?-1:3)}" text-anchor="middle" font-size="6.5" fill="#dfe5ef">${t1}</text>`+(t2?`<text x="${x+w/2}" y="${y+h/2+8}" text-anchor="middle" font-size="6.5" fill="#dfe5ef">${t2}</text>`:'');
+  return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26a06b"/><stop offset="1" stop-color="#14664a"/></linearGradient><linearGradient id="${g}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a505b"/><stop offset="1" stop-color="#20242b"/></linearGradient></defs>
+<path d="M26 138V322" stroke="#d98a2b" stroke-width="7" fill="none" stroke-linecap="round"/>
+<rect class="h" x="20" y="16" width="140" height="122" rx="14" fill="url(#${g})" stroke="#6ff0b8" stroke-width="2"/>
+<path d="M32 124h96M96 98h40M26 70v36M124 70v26" stroke="#9cf5cf" opacity=".5" fill="none"/>
+<g fill="#d7dbe3" stroke="#6b7280"><circle cx="30" cy="26" r="3.2"/><circle cx="150" cy="26" r="3.2"/><circle cx="30" cy="128" r="3.2"/><circle cx="150" cy="128" r="3.2"/></g>
+<rect x="32" y="34" width="62" height="62" rx="5" fill="url(#${g}c)" stroke="#aeb6c4"/><text x="63" y="48" text-anchor="middle" font-size="6.5" fill="#9aa3b2">SoC</text><text x="63" y="65" text-anchor="middle" font-size="8" font-weight="700" fill="#e8edf5">${a}</text><text x="63" y="77" text-anchor="middle" font-size="8" font-weight="700" fill="#e8edf5">${b}</text>
+${chip(102,34,48,28,'RAM',p.ram.replace(' / ','/'))}${chip(102,68,48,28,'Flash','накопитель')}${chip(32,104,26,18,'Modem')}${chip(64,104,22,18,'RF')}${chip(92,104,20,18,'NFC')}${chip(118,102,32,22,'PMIC')}
+<rect class="h" x="26" y="312" width="128" height="46" rx="10" fill="url(#${g})" stroke="#6ff0b8" stroke-width="2"/><rect x="74" y="338" width="32" height="10" rx="5" fill="#1b1d22" stroke="#aeb6c4"/>${chip(36,322,22,14,'IC')}<circle cx="132" cy="334" r="4" fill="#111" stroke="#aeb6c4"/></svg>`};
+const frameSvg=p=>{const g='f'+(++uid),t=/титан/i.test(p.mat),c=t?['#d8d2c6','#6f6a60']:['#e6eaf0','#6b7380'];return `<svg viewBox="0 0 180 370"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset=".5" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[0]}"/></linearGradient></defs><g fill="#8a93a3"><rect x="177" y="112" width="5" height="44" rx="2"/><rect x="-2" y="96" width="5" height="30" rx="2"/><rect x="-2" y="136" width="5" height="30" rx="2"/></g><rect class="h" x="5" y="5" width="170" height="360" rx="34" fill="none" stroke="url(#${g})" stroke-width="10"/><rect x="10" y="10" width="160" height="350" rx="30" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="1.5"/><rect x="1" y="1" width="178" height="368" rx="35" fill="none" stroke="rgba(255,255,255,.6)"/><rect x="26" y="1.5" width="40" height="3" rx="1.5" fill="rgba(255,255,255,.55)"/><path d="M0 62h10M170 62h10M0 308h10M170 308h10" stroke="#1b1d22" stroke-width="2.4"/><rect x="72" y="361" width="36" height="6" rx="3" fill="#0b0c0e"/><g fill="#0b0c0e"><circle cx="124" cy="364" r="1.3"/><circle cx="130" cy="364" r="1.3"/><circle cx="136" cy="364" r="1.3"/><circle cx="50" cy="364" r="1.3"/></g></svg>`};
+const dispHtml=p=>`<i class="${p.brand==='Apple'?'isl':''}"></i>${p.lay==='flip'?'<u class="crease"></u>':p.lay==='colf'?'<u class="crease v"></u>':''}${p.wf?'<em class="wfe"></em>':''}<div class="clk"><small id="dt"></small><b id="clk"></b></div>`;
+function tickClock(){const d=new Date(),c=$('#clk'),t=$('#dt');if(c)c.textContent=d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});if(t)t.textContent=d.toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
+
+/* ---------- Описание деталей ---------- */
+const PARTS=[
+ {k:'disp',n:'Дисплей',e:'🖥️',cover:1,svg:null,t:'Экран закрывает аппарат спереди и принимает касания. В OLED-матрице каждый пиксель светится сам, поэтому чёрный цвет по-настоящему чёрный, а частота обновления определяет плавность прокрутки.',rows:p=>[['Диагональ',p.inch],['Разрешение',p.res],['Частота обновления',p.hz],['Тип матрицы',p.panel]]},
+ {k:'frame',n:'Рамка (корпус)',e:'🧱',svg:frameSvg,t:'Рамка держит все модули вместе, отводит часть тепла и принимает удары на себя. От материала зависят вес и прочность телефона.',rows:p=>[['Материалы',p.mat],['Вес',p.w],['Защита от воды и пыли',p.ip]]},
+ {k:'board',n:'Материнская плата',e:'🧠',svg:boardSvg,t:'Плата соединяет все компоненты. Главный чип (SoC) объединяет процессор, графику, ускоритель для ИИ и часто модем. Рядом работают оперативная память и накопитель.',rows:p=>[['Процессор (SoC)',p.soc],['Оперативная память',p.ram],['Накопитель',p.mem]]},
+ {k:'bat',n:'Аккумулятор',e:'🔋',svg:batSvg,t:'Литий-ионный аккумулятор занимает больше всего места внутри. Ёмкость в мАч показывает запас заряда, а со временем из-за циклов зарядки она постепенно снижается.',rows:p=>[['Ёмкость',p.bat],['Зарядка',p.chg]]},
+ {k:'cam',n:'Камеры',e:'📷',svg:camSvg,t:'Каждый объектив отвечает за свой угол обзора или зум. Затем процессор склеивает несколько кадров, и получается один снимок с хорошей детализацией.',rows:p=>[['Тыловые камеры',p.cams]]},
+ {k:'back',n:'Задняя панель',e:'🪟',cover:1,svg:p=>bodySvg(p,false),t:'Стекло пропускает сигнал беспроводной зарядки и выглядит дороже, пластик легче и меньше боится ударов.',rows:p=>[['Материалы',p.mat],['Защита',p.ip]]}
+];
+const partBy=k=>PARTS.find(x=>x.k===k);
+
+/* ---------- оверлей ---------- */
+const ov=$('#ov'),sheet=$('#sheet');
+function openSheet(html,wide){sheet.className='sheet'+(wide?' wide':'');sheet.innerHTML=html+'<button style="margin-top:6px" onclick="closeSheet()">Закрыть</button>';ov.hidden=false}
+function closeSheet(){ov.hidden=true}
+ov.addEventListener('click',e=>{if(e.target===ov)closeSheet()});
+addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+const tbl=r=>'<table>'+r.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td></tr>`).join('')+'</table>';
+function partInfo(p,k){const d=partBy(k);openSheet(`<div class="em">${d.e}</div><h2>${d.n}</h2><div class="sub">${p.name}</div><p>${d.t}</p>`+tbl(d.rows(p)))}
+
+/* ---------- каталог ---------- */
+let state={q:'',brand:'Все',cmp:[]};
+function list(){
+  stopLoop();
+  const brands=['Все','Ретро','Водопад',...new Set(P.map(p=>p.brand))];
+  $('#app').innerHTML=`<div class="tools"><input type="search" id="q" placeholder="Поиск модели…" value="${state.q}">${brands.map(b=>`<button class="chip ${b===state.brand?'on':''}" data-b="${b}">${b}</button>`).join('')}<button id="rnd">🎲 Случайная</button><button id="addp">➕ Свой телефон</button></div><div id="grid"></div><div id="cbar" hidden></div>`;
+  $('#q').oninput=e=>{state.q=e.target.value;draw()};
+  document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.brand=c.dataset.b;list()});
+  $('#grid').onclick=e=>{const b=e.target.closest('.cmpb');if(!b)return;e.preventDefault();const id=b.dataset.id,i=state.cmp.indexOf(id);if(i>=0)state.cmp.splice(i,1);else{if(state.cmp.length>=2)state.cmp.shift();state.cmp.push(id)}draw()};
+  $('#addp').onclick=addPhone;
+  $('#rnd').onclick=()=>{location.hash='#/phone/'+P[Math.floor(Math.random()*P.length)].id};
+  draw();
+}
+function draw(){
+  const q=state.q.trim().toLowerCase();
+  const arr=P.filter(p=>(state.brand==='Все'||(state.brand==='Ретро'?+p.year<=2018:state.brand==='Водопад'?!!p.wf:p.brand===state.brand))&&(p.name+' '+p.brand).toLowerCase().includes(q)).sort((a,b)=>(b.id===S.fav)-(a.id===S.fav));
+  $('#grid').innerHTML=arr.length?arr.map((p,i)=>`<a class="tile" href="#/phone/${p.id}" style="animation-delay:${i*40}ms"><div class="pic">${bodySvg(p,true).replace('<svg ','<svg ').replace(/<svg style="position:absolute;inset:0" /,'<svg style="position:absolute;inset:0;height:100%" ')}</div><b>${p.id===S.fav?'⭐ ':''}${p.name}</b><span>${p.brand} · ${p.year}</span><button class="cmpb ${state.cmp.includes(p.id)?'on':''}" data-id="${p.id}" title="Сравнить">⇄</button></a>`).join(''):'<p class="sub">Ничего не найдено</p>';
+  document.querySelectorAll('.pic').forEach(el=>{el.style.position='relative';const s=el.querySelectorAll('svg');s.forEach(x=>x.style.cssText='position:absolute;left:50%;top:50%;height:170px;width:auto;transform:translate(-50%,-50%);filter:drop-shadow(0 10px 14px rgba(0,0,0,.28))');if(s[1])s[1].style.filter='none'});
+  const cb=$('#cbar');cb.hidden=!state.cmp.length;
+  cb.innerHTML=`<span>Для сравнения: ${state.cmp.map(id=>byId(id).name).join(' и ')}</span>`+(state.cmp.length==2?'<button class="on" id="goCmp">Сравнить</button>':'<span class="sub" style="margin:0">выберите ещё одну</span>')+'<button id="clrCmp">✕</button>';
+  $('#clrCmp').onclick=()=>{state.cmp=[];draw()};
+  if($('#goCmp'))$('#goCmp').onclick=compare;
+}
+const num=t=>Math.max(0,...(String(t).replace(/\s/g,'').replace(/,/g,'.').match(/[\d.]+/g)||[]).map(Number));
+const BET={bat:1,w:-1,ram:1,hz:1,inch:1};
+const win=(k,x,y)=>BET[k]&&num(x)*BET[k]>num(y)*BET[k]?' style="color:var(--ok);font-weight:700"':'';
+function compare(){
+  const [a,b]=state.cmp.map(byId);
+  const rows=[['Процессор','soc'],['ОЗУ','ram'],['Экран','inch'],['Разрешение','res'],['Частота','hz'],['Батарея','bat'],['Зарядка','chg'],['Камеры','cams'],['Вес','w'],['Защита','ip']];
+  openSheet(`<h2>Сравнение</h2><table><tr><td></td><td><b>${a.name}</b></td><td><b>${b.name}</b></td></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td${win(r[1],a[r[1]],b[r[1]])}>${a[r[1]]}</td><td${win(r[1],b[r[1]],a[r[1]])}>${b[r[1]]}</td></tr>`).join('')}</table><p class="hint">Зелёным отмечено лучшее значение (батарея, ОЗУ, экран, частота, лёгкость).</p>`,true);
+}
+
+/* ---------- страница телефона ---------- */
+let raf=0,loopOn=false;
+function stopLoop(){cancelAnimationFrame(raf);loopOn=false}
+function tween(from,to,ms,fn,done){const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);fn(from+(to-from)*e);if(k<1)requestAnimationFrame(f);else done&&done()})(t0)}
+const mm=(a,b)=>{const r=[];for(let c=0;c<4;c++)for(let q=0;q<4;q++){let t=0;for(let k=0;k<4;k++)t+=a[k*4+q]*b[c*4+k];r[c*4+q]=t}return r};
+const RY=t=>{const c=Math.cos(t*Math.PI/180),s=Math.sin(t*Math.PI/180);return[c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]};
+const RX=t=>{const c=Math.cos(t*Math.PI/180),s=Math.sin(t*Math.PI/180);return[1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]};
+function phonePage(p){
+  stopLoop();
+  const base=PARTS.map(d=>d.k);
+  const order=['disp','board','bat','frame','back','cam'];
+  $('#app').innerHTML=`<a class="back" href="#/">← Все модели</a><div class="dgrid"><section class="card"><div class="stage" id="stage"><div class="phone" id="phone"></div></div><div class="ctrl"><button id="bEx" class="on">Собрать</button><input type="range" id="rEx" min="0" max="100" value="65" aria-label="Степень разборки"><button id="bFlip">Перевернуть</button><button id="bRot">Вращать</button><button id="bQ">🎯 Найди деталь</button></div><div id="qbar" hidden></div><p class="hint">Крутите телефон пальцем в любую сторону: он вращается полностью, как в руке. Нажмите на деталь, и откроются её характеристики. Ползунок раздвигает слои.</p></section><section class="card"><div class="head">${bodySvg(p,true).replace(/<svg style="position:absolute;inset:0" /,'<svg style="position:absolute;inset:0" ')}<div><h1>${p.name}</h1><p class="sub" style="margin:0">${p.brand} · ${p.year}</p></div></div>${tbl([...(p.code?[['Кодовое имя',p.code]]:[]),['Процессор',p.soc],['Память',p.ram+' ОЗУ, '+p.mem],['Экран',`${p.inch}, ${p.res}, ${p.hz}, ${p.panel}`+(p.wf?', изогнутые края («водопад»)':'')],['Батарея',p.bat],['Зарядка',p.chg],['Камеры',p.cams],['Вес',p.w],['Защита',p.ip],['Корпус',p.mat]])}<div class="sw">${SW.map((c,i)=>`<button class="dot" data-i="${i}" title="${c[0]}" style="background:linear-gradient(135deg,${c[2]},${c[1]})"></button>`).join('')}</div><div class="parts">${order.map(k=>`<button data-k="${k}">${partBy(k).e} ${partBy(k).n}</button>`).join('')}</div><button class="brkb" id="bBreak">💥 Режим разрушения</button>${p.custom?'<button id="bDel" style="margin-top:8px;width:100%">🗑 Удалить этот телефон</button>':''}</section></div>`;
+  const head=$('.head');
+  // миниатюра: оборачиваем в контейнер нужного размера
+  const hs=head.querySelectorAll('svg');const w=document.createElement('div');w.style.cssText='position:relative;width:60px;height:120px;flex:none';hs.forEach((s,i)=>{s.style.cssText='position:absolute;inset:0;width:100%;height:100%'+(i?'':';filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))');w.appendChild(s)});head.prepend(w);
+  const ph=$('#phone');let cur={...p};
+  ph.insertAdjacentHTML('beforeend',[...Array(14)].map((_,i)=>{const k=i/13,l=32+46*Math.sin(Math.PI*k),ti=/титан/i.test(p.mat);return `<div class="sd rim" style="--k:${k.toFixed(3)};border-color:${ti?`hsl(40 9% ${l}%)`:`hsl(215 13% ${l}%)`}"></div>`}).join(''));
+  order.forEach((k,i)=>{const d=partBy(k),el=document.createElement('div');el.className='layer '+(d.cover?'cover ':'')+(k==='disp'?'box':'');el.dataset.k=k;el.style.setProperty('--i',i);
+    el.innerHTML=k==='disp'?`<div class="disp" style="position:absolute;inset:0;border-radius:36px;background:${dispBg(cur)}">${dispHtml(cur)}</div>`:d.svg(cur);
+    // у задней панели камеры лежат отдельным слоем: ничего не добавляем
+    ph.appendChild(el)});
+  let M=mm(RX(-14),RY(-28)),vx=0,vy=0,ex=.65,auto=!!S.rot,drag=null,last={k:null,t:0},quiz={on:false,t:null,s:0,n:0};
+  const apply=()=>{ph.style.setProperty('--m','matrix3d('+M.join(',')+')');ph.style.setProperty('--ex',ex)};
+  apply();
+  const stage=$('#stage'),tip=$('#tip');
+  const layerAt=(x,y)=>{const ls=document.elementsFromPoint(x,y).map(t=>t.closest&&t.closest('.layer')).filter((l,i,a)=>l&&a.indexOf(l)===i);return (ex>.2?ls.find(l=>!l.classList.contains('cover')):null)||ls[0]||null};
+  const sel=k=>document.querySelectorAll('.layer').forEach(l=>l.classList.toggle('sel',l.dataset.k===k));
+  stage.addEventListener('pointerdown',e=>{if(drag)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,m:false,l:layerAt(e.clientX,e.clientY)};vx=vy=0;stage.setPointerCapture(e.pointerId);tip.style.opacity=0});
+  stage.addEventListener('pointermove',e=>{
+    if(drag){if(e.pointerId!==drag.id)return;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)drag.m=true;if(drag.m){const a=(e.clientX-drag.px)*.5,b=-(e.clientY-drag.py)*.5;M=mm(mm(RX(b),RY(a)),M);vx=a;vy=b;apply()}drag.px=e.clientX;drag.py=e.clientY;return}
+    const l=layerAt(e.clientX,e.clientY);
+    if(l&&!quiz.on){const k=l.dataset.k;sel(k);tip.textContent=partBy(k).n;tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY+14+'px';tip.style.opacity=1}else{sel(null);tip.style.opacity=0}});
+  stage.addEventListener('pointerleave',()=>{if(!drag){sel(null);tip.style.opacity=0}});
+  stage.addEventListener('pointercancel',e=>{if(drag&&e.pointerId===drag.id)drag=null});
+  stage.addEventListener('pointerup',e=>{if(drag&&e.pointerId!==drag.id)return;const d=drag;drag=null;if(!d||d.m||!d.l)return;const k=d.l.dataset.k,now=performance.now();
+    activate(k)});
+  function activate(k){
+    if(!quiz.on){partInfo(p,k);return}
+    quiz.n++;const good=k===quiz.t;if(good&&++quiz.s>=5)ach('quiz');
+    const l=document.querySelector(`.layer[data-k=${k}]`);l.classList.add(good?'ok':'bad');setTimeout(()=>l.classList.remove('ok','bad'),700);
+    next(good?'Верно! ':`Это «${partBy(k).n}». `)}
+  function next(pre=''){const ks=order.filter(k=>k!==quiz.t);quiz.t=ks[Math.floor(Math.random()*ks.length)];$('#qbar').innerHTML=`${pre}Найдите: <b>${partBy(quiz.t).n}</b> (нажмите на неё). Счёт: ${quiz.s} из ${quiz.n}`}
+  $('#bQ').onclick=()=>{quiz.on=!quiz.on;$('#bQ').classList.toggle('on',quiz.on);$('#qbar').hidden=!quiz.on;if(quiz.on){quiz.s=0;quiz.n=0;quiz.t=null;if(ex<.4)tween(ex*100,65,600,v=>{ex=v/100;$('#rEx').value=v;apply()});next()}};
+  $('#rEx').oninput=e=>{ex=e.target.value/100;$('#bEx').textContent=ex>.1?'Собрать':'Разобрать';apply()};
+  $('#bEx').onclick=()=>{const to=ex>.1?0:65;tween(ex*100,to,900,v=>{ex=v/100;$('#rEx').value=v;apply()},()=>{$('#bEx').textContent=to?'Собрать':'Разобрать'})};
+  $('#bFlip').onclick=()=>{let q=0;vx=vy=0;tween(0,180,900,v=>{M=mm(RY(v-q),M);q=v;apply()})};
+  $('#bRot').onclick=()=>{auto=!auto;$('#bRot').classList.toggle('on',auto)};
+  document.querySelectorAll('.parts button').forEach(b=>{b.onclick=()=>partInfo(p,b.dataset.k);b.onmouseenter=()=>sel(b.dataset.k);b.onmouseleave=()=>sel(null)});
+  document.querySelectorAll('.dot').forEach(b=>b.onclick=()=>{const c=SW[b.dataset.i];cur.c1=c[1];cur.c2=c[2];document.querySelectorAll('.layer[data-k=back]').forEach(l=>l.innerHTML=partBy('back').svg(cur));document.querySelectorAll('.disp').forEach(d=>d.style.background=dispBg(cur));w.innerHTML=bodySvg(cur,true);w.querySelectorAll('svg').forEach((x,i)=>x.style.cssText='position:absolute;inset:0;width:100%;height:100%'+(i?'':';filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))'))});
+  $('#bBreak').onclick=()=>breakMode(cur);
+  if($('#bDel'))$('#bDel').onclick=()=>{try{localStorage.setItem('customPhones',JSON.stringify(JSON.parse(localStorage.getItem('customPhones')||'[]').filter(o=>o.id!==p.id)))}catch(e){}P.splice(P.findIndex(x=>x.id===p.id),1);location.hash='#/'};
+  function setupFun(){$('.ctrl').insertAdjacentHTML('beforeend','<button id="bWp">🖼️ Обои</button><button id="bChg">⚡ Зарядка</button>');
+    $('#bWp').onclick=()=>{wpI=(wpI+1)%WP.length;document.querySelectorAll('.disp').forEach(d=>d.style.background=dispBg(cur))};
+    let ci=0,cv=42;$('#bChg').onclick=()=>{if(ci){clearInterval(ci);ci=0;document.querySelectorAll('.chg').forEach(e=>e.remove());$('#bChg').classList.remove('on');return}
+      $('#bChg').classList.add('on');const w=Math.max(10,num(p.chg)||20);document.querySelectorAll('.disp').forEach(d=>d.insertAdjacentHTML('beforeend','<div class="chg"></div>'));
+      const t=()=>{if(!$('#bChg')){clearInterval(ci);return}document.querySelectorAll('.chg').forEach(e=>e.textContent='⚡ '+Math.round(cv)+'%'+(cv>=100?' · заряжен':''));cv=Math.min(100,cv+w/4)};t();ci=setInterval(t,1000)}}
+  function setupFold(){if(!/^(colf|flip)$/.test(p.lay))return;const fl=p.lay==='flip',hb=document.createElement('div');hb.className='hb '+(fl?'x':'y');
+    ph.querySelectorAll('.layer').forEach(l=>{const c=l.cloneNode(true);c.innerHTML=c.innerHTML.replace(/ id="(clk|dt)"/g,'');c.style.clipPath=fl?'inset(50% 0 0 0)':'inset(0 0 0 50%)';l.style.clipPath=fl?'inset(0 0 50% 0)':'inset(0 50% 0 0)';hb.appendChild(c)});
+    ph.appendChild(hb);let f=0;const set=v=>{f=v;if(v>=98)ach('fold');ph.classList.toggle('fd',v>1);ph.style.setProperty('--fd',(fl?v*1.7:-v*1.7)+'deg')};set(0);
+    $('.ctrl').insertAdjacentHTML('beforeend','<button id="bFold">📖 Сложить</button><input type="range" id="rFold" min="0" max="100" value="0" aria-label="Сгиб">');
+    $('#rFold').oninput=e=>{set(+e.target.value);$('#bFold').textContent=f>50?'📖 Разложить':'📖 Сложить'};
+    $('#bFold').onclick=()=>{const to=f>50?0:100;tween(f,to,900,v=>{set(v);$('#rFold').value=v},()=>{$('#bFold').textContent=to?'📖 Разложить':'📖 Сложить'})}}
+  tickClock();setupFold();setupFun();$('#bRot').classList.toggle('on',auto);let fc=0;loopOn=true;(function loop(){if(!loopOn)return;if(++fc%60==0)tickClock();if(!drag&&(Math.abs(vx)>.02||Math.abs(vy)>.02)){M=mm(mm(RX(vy),RY(vx)),M);vx*=.95;vy*=.95;apply()}else if(auto&&!drag){M=mm(RY(.35),M);apply()}raf=requestAnimationFrame(loop)})();
+}
+
+/* ---------- свой телефон ---------- */
+function addPhone(){
+  openSheet(`<h2>➕ Свой телефон</h2><p>Добавьте любой телефон, в том числе старый. Он сохранится в этом браузере.</p><div style="display:grid;gap:8px"><input id="f_brand" placeholder="Бренд (например, Nokia)"><input id="f_name" placeholder="Модель (например, Lumia 920)"><input id="f_year" type="number" placeholder="Год выпуска"><input id="f_soc" placeholder="Процессор"><input id="f_ram" placeholder="ОЗУ (2 ГБ)"><input id="f_inch" placeholder="Экран (4,5″)"><input id="f_bat" placeholder="Аккумулятор (2000 мАч)"><label>Цвет корпуса <input id="f_c" type="color" value="#3b6fd4"></label><select id="f_lay"><option value="one">Одна камера</option><option value="bar">Планка камер (Pixel)</option><option value="island">Островок камер</option><option value="col">Столбик камер</option><option value="sq">Квадратный блок</option><option value="pill">Вертикальная таблетка</option><option value="round">Круглый блок</option><option value="dual">Прозрачная крышка</option><option value="flip">Складной Flip</option><option value="colf">Складной Fold</option></select><select id="f_n"><option>1</option><option>2</option><option>3</option><option>4</option></select><label><input id="f_wf" type="checkbox" style="width:auto"> Экран «водопад» (изогнутые края)</label></div><button class="on" id="f_ok" style="margin-top:10px">Добавить</button> `);
+  $('#f_ok').onclick=()=>{const v=i=>$('#f_'+i).value.trim(),name=v('name');if(!name){$('#f_name').focus();return}
+    const c=$('#f_c').value,lt=h=>'#'+[1,3,5].map(i=>Math.round(parseInt(h.substr(i,2),16)*.5+127).toString(16).padStart(2,'0')).join('');
+    const d='—',o={id:'u'+Date.now(),brand:v('brand')||'Другое',name,year:v('year')||d,c1:c,c2:lt(c),lay:$('#f_lay').value,n:+$('#f_n').value,soc:v('soc')||d,ram:v('ram')||d,mem:d,inch:v('inch')||d,res:d,hz:d,panel:d,bat:v('bat')||d,chg:d,cams:d,w:d,ip:d,mat:d,code:'',wf:$('#f_wf').checked?'1':'',custom:true};
+    ach('make');P.push(o);try{const a=JSON.parse(localStorage.getItem('customPhones')||'[]');a.push(o);localStorage.setItem('customPhones',JSON.stringify(a))}catch(e){}
+    closeSheet();location.hash='#/phone/'+o.id};
+}
+/* ---------- режим разрушения ---------- */
+let brkRaf=0;
+const LQ=[['💧 Вода','90,170,255',1],['🥤 Кола','210,110,50',1.6],['☕ Кофе','215,150,80',1.3]];
+function stopBrk(){cancelAnimationFrame(brkRaf);$('#brk').hidden=true}
+const TOOLS=[['ham','🔨','Молоток','Нажимайте на телефон: каждый удар оставляет трещины. Переверните его, чтобы бить по крышке и камере.'],['fire','🔥','Огонь','Зажмите палец на телефоне. Огонь у середины, где аккумулятор, особенно опасен.'],['drop','⬇️','Уронить','Телефон упадёт на случайный угол.'],['roll','🚜','Каток','Раздавить телефон катком.'],['water','💧','Вода','Водите пальцем, чтобы лить воду. Многое зависит от класса защиты IP.'],['zap','⚡','Разряд','Нажмите: по плате пробежит электрический разряд.'],['bolt','⛈️','Молния','Нажмите: молния ударит с неба в выбранную точку.'],['mw','📡','Микроволновка','Телефон отправится в микроволновку. Металл будет искрить, а аккумулятор греться.'],['gun','🔫','Выстрел','Нажмите: пуля пробьёт телефон насквозь. Что она заденет, зависит от места.'],['key','🗝️','Ключ','Проведите по экрану или крышке, чтобы оставить царапины.'],['port','🔌','Залить разъём','Держите палец над разъёмом внизу телефона: жидкость льётся вниз. Влага в порту замыкает контакты и может поджечь аккумулятор.'],['pierce','🪡','Проткнуть АКБ','Нажмите по середине: игла пробьёт аккумулятор. Начнётся пожар, а затем возможен взрыв.'],['turn','🔄','Крутить','Тяните вбок: телефон плавно поворачивается передом или крышкой.']];
+function breakMode(p){
+  cancelAnimationFrame(brkRaf);
+  const W=220,H=460,o=$('#brk');o.hidden=false;
+  const bk=bodySvg(p,true).replace('<svg style="position:absolute;inset:0" ','<svg ').replace(/<svg /g,'<svg preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" ');
+  o.innerHTML=`<div class="bbar"><b>💥 ${p.name}</b><span id="bint"></span><button id="bx">✕</button></div><div class="bwr"><div class="bst" id="bst"><div class="bbend" id="bbend"><div class="bflip" id="bflip">${[...Array(14)].map((_,i)=>{const k=i/13,l=30+48*Math.sin(Math.PI*k),ti=/титан/i.test(p.mat);return `<div class="brim" style="--k:${k.toFixed(3)};border-color:${ti?`hsl(40 9% ${l}%)`:`hsl(215 13% ${l}%)`}"></div>`}).join('')}<div class="bface"><div class="bph" style="background:#0b0c10">${frameSvg(p).replace('<svg ','<svg preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" ')}<div class="disp" id="bscr" style="position:absolute;inset:11px;border-radius:33px;background:${dispBg(p)}">${dispHtml(p)}</div><canvas id="cd" width="${W}" height="${H}"></canvas><i class="prt"></i></div></div><div class="bface b"><div class="bph" id="bbk" style="box-shadow:none;background:none">${bk}<canvas id="cdb" width="${W}" height="${H}"></canvas><i class="prt"></i></div></div></div></div><canvas id="cf" width="${W}" height="${H}"></canvas><div id="mw" hidden></div></div></div><div class="btools" id="tl">${TOOLS.map(t=>`<button data-t="${t[0]}">${t[1]} ${t[2]}</button>`).join('')}</div><div class="btools"><button id="bliq">💧 Вода</button><button id="bflp">🔄 Перевернуть</button><button id="brep" class="on">🔍 Что сломалось</button><button id="bfix">🔧 Починить</button></div><p class="hint" id="bh"></p>`;
+  const bst=$('#bst'),bend=$('#bbend'),wr=o.querySelector('.bwr'),scr=$('#bscr'),bbk=$('#bbk'),cF=$('#cd').getContext('2d'),cB=$('#cdb').getContext('2d'),cf=$('#cf').getContext('2d'),base=scr.style.cssText;
+  let cd=cF,face='f',D,fx=[],tool='ham',fire=null,last=[0,0],fr=0,down=false,micro=0,ang=0,tdrag=null,liq=0;
+  const R=(a,b)=>a+Math.random()*(b-a);
+  o.querySelector('#clk').textContent=new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+  const wd=Math.max(0,...(p.ip.match(/IP\d(\d)/g)||[]).map(x=>+x[3])),wk=wd>=7?.08:wd>=5?.5:1;
+  const M=()=>face==='b'?'bk':'scr',other=()=>face==='b'?'scr':'bk';
+  const camZ=(x,y)=>y<(p.lay==='bar'||p.lay==='island'?125:170)&&(p.lay==='bar'||p.lay==='island'||x<150);
+  const add=(k,v)=>{D[k]=Math.min(100,D[k]+v)};
+  const integ=()=>Math.max(0,Math.round(100-(D.scr*.25+D.brd*.3+D.bat*.15+D.cam*.1+D.frm*.12+D.bk*.08+D.prt*.05)));
+  const upd=()=>{if(D.prt>=100){ach('port');if(liq===1)ach('cola')}$('#bint').textContent='Целостность: '+integ()+'%'+(D.bat>40&&!D.boom?' 🌡️':'')+(D.prt>5?' 🔌'+(D.prt|0)+'%':'')+(D.fl.length?' 🔥':'');o.querySelectorAll('.prt').forEach(e=>e.style.background=D.prt>5?`rgba(${LQ[liq][1]},${.35+D.prt/160})`:'');scr.style.transform=D.bat>45?`scale(${1+(D.bat-45)/1000},${1+(D.bat-45)/800})`:'';if(D.bat>=100&&!D.boom)boom(W/2,H/2);
+    scr.style.filter=D.scr>35?`brightness(${(1-D.scr/140).toFixed(2)})`:'';bbk.style.filter=D.bk>35?`brightness(${(1-D.bk/140).toFixed(2)})`:'';
+    scr.classList.toggle('glt',(D.scr>55&&D.scr<90)||(D.brd>60&&D.brd<90));
+    if(D.scr>=90||D.brd>=90){scr.style.background='#000';scr.querySelector('.clk').style.display='none'}
+    bend.style.transform=D.frm>5?`scaleY(${1-D.frm/420}) skewX(${D.frm/18}deg) rotate(${D.frm/40}deg)`:''};
+  const reset=()=>{D={scr:0,brd:0,bat:0,cam:0,frm:0,bk:0,wet:0,boom:0,prt:0,fl:[],ev:{}};fx=[];micro=0;$('#mw').hidden=true;cF.clearRect(0,0,W,H);cB.clearRect(0,0,W,H);scr.style.cssText=base;scr.querySelector('.clk').style.display='';upd()};
+  const burn=(x,y,r,a)=>{const g=cd.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(0,0,0,${a})`);g.addColorStop(1,'rgba(0,0,0,0)');cd.fillStyle=g;cd.beginPath();cd.arc(x,y,r,0,6.3);cd.fill()};
+  const crack=(x,y,n,len)=>{cd.save();cd.shadowColor='rgba(0,0,0,.7)';cd.shadowBlur=2;cd.strokeStyle='rgba(255,255,255,.85)';cd.lineWidth=1.1;
+    for(let i=0;i<n;i++){let a=R(0,6.3),px=x,py=y,l=len*R(.4,1.3);cd.beginPath();cd.moveTo(px,py);while(l>0){const s=R(5,13);a+=R(-.5,.5);px+=Math.cos(a)*s;py+=Math.sin(a)*s;cd.lineTo(px,py);l-=s}cd.stroke()}
+    cd.lineWidth=.7;for(const r of[9,18,30]){const s0=R(0,6.3);cd.beginPath();cd.arc(x,y,r,s0,s0+R(2,4));cd.stroke()}
+    cd.restore();burn(x,y,7,.6)};
+  const on=(c,f)=>{const c0=cd;cd=c;f();cd=c0};
+  const shake=()=>{snd(120,.15,'sawtooth',.2);vib(25);wr.classList.remove('shk');void wr.offsetWidth;wr.classList.add('shk')};
+  const flames=(x,y,n)=>{for(let i=0;i<n;i++)fx.push({t:'f',x:x+R(-10,10),y:y+R(-6,6),vx:R(-.8,.8),vy:-R(1,3),l:1,r:R(6,12)})};
+  const boom=(x,y)=>{D.boom=1;ach('boom');snd(90,1.2,'sawtooth',.35,.15);vib([200,60,200]);o.classList.remove('fl');void o.offsetWidth;o.classList.add('fl');for(let i=0;i<260;i++){const a=R(0,6.3),v=R(1,9);fx.push({t:'x',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,l:1})}fx.push({t:'w',x,y,r:5,l:1});flames(x,y,60);for(let i=0;i<14;i++)fx.push({t:'s',x:x+R(-30,30),y:y+R(-30,30),vx:R(-1,1),vy:-R(.5,1.5),l:1,r:R(10,18)});add('scr',100);add('bk',100);add('brd',60);add('frm',60);add('cam',60);burn(x,y,90,.95);for(let i=0;i<8;i++)crack(R(20,W-20),R(30,H-30),6,140);for(let i=0;i<3;i++)ignite(x+R(-50,50),y+R(-70,70));D.ev.boom=1;shake()};
+  const ignite=(x,y)=>{if(D.fl.length<10){ach('fire');D.fl.push({x:Math.max(15,Math.min(W-15,x)),y:Math.max(15,Math.min(H-15,y))});D.ev.fire=1}};
+  const quench=(x,y)=>{const n=D.fl.length;D.fl=D.fl.filter(f=>Math.hypot(f.x-x,f.y-y)>30);if(D.fl.length<n)ach('fireman')};
+  const pour=(x,y)=>{D.ev.port=1;for(let i=0;i<3;i++)fx.push({t:'p',x:x+R(-3,3),y,vx:R(-.2,.2),vy:1,l:1,c:LQ[liq][1],k:LQ[liq][2]});D.wet+=.1};
+  const bolt=(x,y)=>{snd(1200,.25,'sawtooth',.12,.05);const pts=[[x,0]];let px=x,py=0;while(py<y){px+=R(-14,14);py+=R(14,30);pts.push([px,Math.min(py,y)])}fx.push({t:'b',pts,l:1})};
+  const ev=k=>{D.ev[k]=(D.ev[k]||0)+1};
+  const act={
+    ham(x,y){ev('ham');if(D.ev.ham>=30)ach('hammer');const m=M();crack(x,y,8+(D[m]/12|0),50+D[m]);add(m,20);add('cam',face==='b'&&camZ(x,y)?30:3);add('frm',3);if(D.ev.ham>3)add('brd',8);if(D.ev.ham>5)add('bat',5);shake()},
+    zap(x,y){ev('zap');bolt(x,y);if(face==='f')for(let i=0;i<6;i++){cd.fillStyle=['#f0f','#0f0','#08f','#fff'][i%4];cd.fillRect(R(10,W-10),R(10,H-60),2,R(20,120))}burn(x,y,16,.5);add('brd',35);add('bat',12);add(M(),18);shake()},
+    bolt(x,y){ev('bolt');if(D.ev.bolt>=5)ach('thor');o.classList.remove('fl');void o.offsetWidth;o.classList.add('fl');bolt(x,y);burn(x,y,40,.8);flames(x,y,30);add(M(),50);add('brd',70);add('bat',40);add('cam',20);add('frm',15);if(D.bat>=100&&!D.boom)boom(x,y);shake()},
+    gun(x,y){ev('gun');if(D.ev.gun>=10)ach('sniper');crack(x,y,10,70);cd.fillStyle='#000';cd.beginPath();cd.arc(x,y,4,0,6.3);cd.fill();
+      on(face==='b'?cF:cB,()=>{crack(W-x,y,12,90);cd.fillStyle='#000';cd.beginPath();cd.arc(W-x,y,5,0,6.3);cd.fill()});
+      for(let i=0;i<10;i++){const a=R(0,6.3),v=R(1,4);fx.push({t:'x',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.6})}
+      add(M(),40);add(other(),40);add('frm',8);const bx=face==='b'?x:W-x,zy=y/H;
+      if(zy>.25&&zy<.8){add('bat',55);flames(x,y,15)}if(zy<=.3)add('brd',45);if(camZ(bx,y))add('cam',45);
+      if(D.bat>=100&&!D.boom)boom(x,y);shake()},
+    water(x,y){D.ev.water=1;D.wet+=1;for(let i=0;i<5;i++)fx.push({t:'d',x:x+R(-12,12),y:y+R(-10,0),vx:R(-.8,.8),vy:R(0,1),l:1});cd.fillStyle='rgba(80,160,255,.07)';cd.beginPath();cd.arc(x,y,R(14,26),0,6.3);cd.fill();add('brd',1.2*wk);add(M(),.5*wk);add('cam',.6*wk);add('bat',.2*wk)},
+    key(x,y,lx,ly){D.ev.key=1;cd.save();cd.strokeStyle='rgba(235,235,235,.85)';cd.lineWidth=1.3;cd.shadowColor='#000';cd.shadowBlur=2;cd.beginPath();cd.moveTo(lx,ly);cd.lineTo(x,y);cd.stroke();cd.restore();add(M(),Math.hypot(x-lx,y-ly)*.05);add('frm',.02)},
+    drop(){const c=[[20,20],[W-20,20],[20,H-20],[W-20,H-20]][Math.random()*4|0],m=M();ev('drop');bst.classList.remove('drp');void bst.offsetWidth;bst.classList.add('drp');setTimeout(()=>{crack(c[0],c[1],9,70+D[m]/2);add(m,22);add('frm',18);add('cam',c[1]<H/2?12:3);add('brd',6);shake();upd()},520)},
+    roll(){ev('roll');ach('flat');bend.classList.remove('rol');void bend.offsetWidth;bend.classList.add('rol');setTimeout(()=>{for(const c of[cF,cB])on(c,()=>{for(let i=0;i<5;i++)crack(R(20,W-20),R(40,H-40),6,R(80,160))});add('scr',60);add('bk',60);add('brd',45);add('frm',70);add('bat',40);add('cam',50);if(D.bat>=100&&!D.boom)boom(W/2,H/2);shake();upd()},350)},
+    mw(){if(micro)return;ev('mw');ach('lunch');micro=260;$('#mw').hidden=false},
+    pierce(x,y){ev('pierce');ach('pierce');crack(x,y,3,25);const zy=y/H;if(zy>.25&&zy<.8){add('bat',45);ignite(x,y);flames(x,y,25);add('brd',10)}else add('brd',3);shake()}
+  };
+  const IM=['drop','roll','mw'];
+  const loop=()=>{fr++;cf.clearRect(0,0,W,H);
+    if(micro>0){micro--;add('brd',.5);add('bat',.45);add('scr',.3);add('bk',.1);add('cam',.2);
+      if(fr%4==0){const x=Math.random()<.5?R(8,30):R(W-30,W-8),y=R(20,H-20);fx.push({t:'b',pts:[[x,y],[x+R(-20,20),y+R(-20,20)],[x+R(-30,30),y+R(-30,30)]],l:1})}
+      if(micro===0){$('#mw').hidden=true;if(D.bat>=100&&!D.boom)boom(W/2,H/2)}upd()}
+    if(fire){add(M(),.2);add('frm',.02);D.ev.fire=1;const zy=fire.y/H;if(face==='b'&&camZ(fire.x,fire.y))add('cam',.3);if(zy>.25&&zy<.8)add('bat',.3);else if(zy<=.25)add('brd',.25);
+      flames(fire.x,fire.y,3);
+      if(fr%2==0)fx.push({t:'s',x:fire.x+R(-6,6),y:fire.y-10,vx:R(-.3,.3),vy:-R(.6,1.2),l:1,r:R(6,10)});
+      if(fr%8==0)burn(fire.x,fire.y,R(14,26),.1);
+      if(D.bat>=100&&!D.boom)boom(fire.x,fire.y);upd()}
+    for(const f of D.fl){const zy=f.y/H;flames(f.x,f.y,2);if(fr%3==0)fx.push({t:'s',x:f.x+R(-6,6),y:f.y-10,vx:R(-.3,.3),vy:-R(.6,1.2),l:1,r:R(6,10)});if(fr%12==0)burn(f.x,f.y,R(14,26),.1);add(M(),.15);add('frm',.02);if(zy>.25&&zy<.8)add('bat',.18);else add('brd',.12)}
+    if(D.fl.length&&fr%100==0&&D.fl.length<9){const f=D.fl[D.fl.length*Math.random()|0];ignite(f.x+R(-45,45),f.y+R(-45,45))}
+    if(!D.boom&&D.bat>55&&Math.random()<(D.bat-55)*.00003){ach('self');ignite(W/2+R(-25,25),H/2+R(-40,40));if(D.bat>=85&&Math.random()<.3)boom(W/2,H/2)}
+    if(D.prt>8){add('brd',D.prt*.0005);if(D.prt>45&&fr%18==0){const x=W/2+R(-14,14);fx.push({t:'b',pts:[[x,H-8],[x+R(-14,14),H-24],[x+R(-20,20),H-44]],l:1});add('bat',.5)}if(D.prt>85&&!D.boom&&Math.random()<.003){ignite(W/2,H-30);add('bat',15)}}
+    if(!tdrag&&ang%180)setAng(Math.round(ang/180)*180);
+    if(D.fl.length||D.prt>8)upd();
+    cf.globalCompositeOperation='lighter';
+    for(const q of fx){q.x+=q.vx||0;q.y+=q.vy||0;
+      if(q.t==='f'){q.l-=.025;q.r*=.985;cf.fillStyle=`rgba(255,${60+170*q.l|0},20,${q.l*.55})`;cf.beginPath();cf.arc(q.x,q.y,q.r,0,6.3);cf.fill()}
+      else if(q.t==='x'){q.vy+=.12;q.l-=.015;cf.fillStyle=`rgba(255,${120+120*q.l|0},40,${q.l})`;cf.fillRect(q.x,q.y,3,3)}
+      else if(q.t==='d'){q.vy+=.25;q.l-=.015;cf.fillStyle=`rgba(90,170,255,${q.l})`;cf.beginPath();cf.arc(q.x,q.y,2,0,6.3);cf.fill()}
+      else if(q.t==='b'){q.l-=.08;cf.strokeStyle=`rgba(190,220,255,${q.l})`;cf.lineWidth=2;cf.beginPath();q.pts.forEach((a,i)=>i?cf.lineTo(a[0],a[1]):cf.moveTo(a[0],a[1]));cf.stroke()}else if(q.t==='p'){q.vy+=.25;cf.fillStyle=`rgba(${q.c},.9)`;cf.fillRect(q.x,q.y,2,4);if(q.y>=H-14){if(Math.abs(q.x-W/2)<17)D.prt=Math.min(100,D.prt+(wk<.3?.35:.9)*q.k);else add('brd',.04*wk);q.l=0}}else if(q.t==='w'){q.r+=9;q.l-=.04;cf.strokeStyle=`rgba(255,230,180,${Math.max(0,q.l)})`;cf.lineWidth=6;cf.beginPath();cf.arc(q.x,q.y,q.r,0,6.3);cf.stroke()}}
+    cf.globalCompositeOperation='source-over';
+    for(const q of fx)if(q.t==='s'){q.l-=.012;q.r+=.15;cf.fillStyle=`rgba(60,60,60,${Math.max(0,q.l*.35)})`;cf.beginPath();cf.arc(q.x,q.y,q.r,0,6.3);cf.fill()}
+    fx=fx.filter(q=>q.l>0);brkRaf=requestAnimationFrame(loop)};
+  const setAng=a=>{ang=a;const q=$('#bflip');q.style.transition='';q.style.transform=`rotateY(${a}deg)`;face=((a/180%2)+2)%2?'b':'f';cd=face==='f'?cF:cB;fire=null};
+  const pt=e=>{const r=bst.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+  const hit=(x,y,first)=>{if(tool==='turn')return;if(tool==='fire')fire={x,y};else if(tool==='port')pour(x,y);else if(tool==='water'){act.water(x,y);quench(x,y)}else if(tool==='key')act.key(x,y,last[0],last[1]);else if(first&&!IM.includes(tool))act[tool](x,y);last=[x,y];upd()};
+  bst.onpointerdown=e=>{if(tdrag)return;down=true;bst.setPointerCapture(e.pointerId);if(tool==='turn'){tdrag={id:e.pointerId,x:e.clientX,a:ang};$('#bflip').style.transition='none';return}const[x,y]=pt(e);last=[x,y];hit(x,y,true)};
+  bst.onpointermove=e=>{if(tdrag){if(e.pointerId!==tdrag.id)return;ang=tdrag.a+(e.clientX-tdrag.x)*.8;$('#bflip').style.transform=`rotateY(${ang}deg)`;return}if(down){const[x,y]=pt(e);hit(x,y,false)}};
+  bst.onpointerup=bst.onpointercancel=bst.onlostpointercapture=()=>{down=false;fire=null;if(tdrag){tdrag=null;setAng(Math.round(ang/180)*180)}};
+  const tb=document.querySelectorAll('#tl button');
+  const pick=b=>{tool=b.dataset.t;(window.__u=window.__u||new Set()).add(tool);if(window.__u.size>=TOOLS.length)ach('all');tb.forEach(x=>x.classList.toggle('on',x===b));$('#bh').textContent=TOOLS.find(a=>a[0]===tool)[3];if(IM.includes(tool))act[tool]();upd()};
+  tb.forEach(b=>b.onclick=()=>pick(b));
+  $('#bliq').onclick=()=>{liq=(liq+1)%3;$('#bliq').textContent=LQ[liq][0]};
+  $('#bflp').onclick=()=>setAng(ang+180);
+  $('#bx').onclick=stopBrk;$('#bfix').onclick=reset;
+  const lv=v=>v<10?0:v<40?1:v<75?2:3,bar=v=>`<div style="height:8px;border-radius:4px;background:var(--line);margin:4px 0"><div style="width:${v}%;height:100%;border-radius:4px;background:${v<40?'var(--ok)':v<75?'#f59e0b':'var(--err)'}"></div></div>`;
+  const EV={ham:'ударов молотком',zap:'разрядов',bolt:'ударов молнии',gun:'выстрелов',drop:'падений',roll:'раз под катком',mw:'сеансов в микроволновке',fire:'огонь',water:'вода',key:'царапины',port:'залив разъёма',pierce:'проколов АКБ',boom:'взрыв аккумулятора'};
+  $('#brep').onclick=()=>{
+    const rows=[['🖥️ Дисплей',D.scr,`${p.panel}, ${p.res}`,['Цел','Трещины и мёртвые пиксели','Сеть трещин, полосы, сенсор отвечает частично','Разбит, картинки нет']],
+      ['🪟 Задняя крышка',D.bk,p.mat,['Цела','Царапины и трещины','Сильно разбита, видны внутренности','Рассыпалась']],
+      ['🧠 Материнская плата',D.brd,short(p.soc),['Работает штатно','Сбои и перезагрузки','Часть модулей отказала: сеть, камера или зарядка','Мертва, телефон не включится']],
+      ['🔋 Аккумулятор',D.bat,p.bat.split(' (')[0],['Исправен','Нагрелся, ёмкость упала','Вздулся и опасен, заряжать нельзя',D.boom?'Тепловой разгон: загорелся и взорвался':'Разрушен']],
+      ['📷 Камеры',D.cam,p.cams.split(' + ')[0],['Линзы целы','Царапины, сбитый автофокус','Линзы разбиты, матрица повреждена, кадры с артефактами','Вышли из строя']],
+      ['🔌 Разъём',D.prt,'USB-C',['Чистый','Влага на контактах','Залит, контакты корродируют','Замкнул и выгорел']],['🧱 Рамка',D.frm,'',['Цела','Вмятины и царапины','Погнута, экран отходит','Смята'+(/титан/i.test(p.mat)&&D.frm<95?', но титан держался дольше алюминия':'')]]];
+    const t=integ(),ip=D.wet?(wk<.3?'Защита справилась: вода почти не проникла':wk<1?'Защита помогла частично, влага внутри':'Защиты почти нет: вода попала на плату'):'Воду не проверяли';
+    const evs=Object.entries(D.ev).map(([k,v])=>EV[k]+(v>1?': '+v:'')).join(', ')||'ничего';
+    openSheet(`<h2>🔍 Диагностика</h2><div class="sub">${p.name}: ${t>85?'почти как новый':t>50?'жив, но потрёпан':t>20?'скорее мёртв, чем жив':'уничтожен'} (целостность ${t}%)</div><p>Что делали: ${evs}.</p>`+rows.map(r=>`<div style="margin:12px 0"><b>${r[0]}</b> <span class="sub">${r[2]}</span>${bar(r[1])}<small style="color:var(--muted)">${r[3][lv(r[1])]}</small></div>`).join('')+`<div style="margin:12px 0"><b>💧 Влагозащита</b> <span class="sub">${p.ip}</span><br><small style="color:var(--muted)">${ip}</small></div><div style="margin:12px 0"><b>💾 Данные</b><br><small style="color:var(--muted)">${D.brd>=75?'Под угрозой: накопитель придётся доставать в сервисе':'Сохранились'}</small></div>`,true)};
+  reset();pick(tb[0]);loop();
+}
+
+/* ---------- достижения ---------- */
+const AC={boom:['💥','Бабах!','Взорвать аккумулятор'],fire:['🔥','Поджигатель','Поджечь телефон'],self:['🌡️','Само загорелось','Телефон загорелся от перегрева'],port:['🔌','Утопленник','Полностью залить разъём'],pierce:['🪡','Игла','Проткнуть аккумулятор'],fireman:['🧯','Пожарный','Потушить огонь водой'],all:['🛠️','Разрушитель','Попробовать все инструменты'],fold:['📖','Раскладушка','Полностью сложить складной телефон'],quiz:['🎯','Знаток','5 верных ответов в «Найди деталь»'],coll:['🗂️','Коллекционер','Открыть 10 разных телефонов'],make:['➕','Создатель','Добавить свой телефон'],style:['🎨','Дизайнер','Сменить тему или цвет акцента'],fav:['⭐','Любимчик','Выбрать любимый телефон'],lunch:['🍕','Обед готов','Отправить телефон в микроволновку',1],thor:['⚡','Громовержец','5 ударов молнии за один сеанс',1],hammer:['🔨','Кузнец','30 ударов молотком',1],sniper:['🔫','Меткий стрелок','10 выстрелов',1],flat:['🥞','Блин','Раскатать телефон катком',1],cola:['🥤','Липкий разъём','Залить разъём колой',1]};
+let AD=[],SEEN=[];try{AD=JSON.parse(localStorage.getItem('ach')||'[]');SEEN=JSON.parse(localStorage.getItem('seen')||'[]')}catch(e){}
+const acN=()=>{$('#ac').textContent=AD.length+'/'+Object.keys(AC).length};acN();
+let tt=0;
+function ach(id){if(AD.includes(id)||!AC[id])return;AD.push(id);snd(660,.12,'sine',.12,1.5);setTimeout(()=>snd(990,.2,'sine',.12,1),120);try{localStorage.setItem('ach',JSON.stringify(AD))}catch(e){}acN();
+  let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t)}
+  t.innerHTML='🏆 Достижение: '+AC[id][0]+' <b>'+AC[id][1]+'</b>';void t.offsetWidth;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3200)}
+function seen(id){if(!SEEN.includes(id)){SEEN.push(id);try{localStorage.setItem('seen',JSON.stringify(SEEN))}catch(e){}}if(SEEN.length>=10)ach('coll')}
+$('#bAch').onclick=()=>{openSheet('<h2>🏆 Достижения</h2><div class="sub">Открыто: '+AD.length+' из '+Object.keys(AC).length+'</div>'+Object.entries(AC).map(([k,a])=>{const o=AD.includes(k);if(a[3]&&!o)a=['❓','Секретное достижение','Продолжайте ломать, и узнаете'];return `<div style="display:flex;gap:12px;align-items:center;margin:10px 0;${o?'':'opacity:.45'}"><span style="font-size:28px;${o?'':'filter:grayscale(1)'}">${a[0]}</span><div><b>${a[1]}</b><br><small style="color:var(--muted)">${a[2]}</small></div>${o?'<span style="margin-left:auto;color:var(--ok)">✓</span>':''}</div>`}).join('')+'<button id="acR" style="margin:6px 0 10px">🗑 Сбросить прогресс</button>');$('#acR').onclick=()=>{if(confirm('Сбросить все достижения?')){AD=[];SEEN=[];try{localStorage.removeItem('ach');localStorage.removeItem('seen')}catch(e){}acN();$('#bAch').onclick()}}};
+
+/* ---------- настройки ---------- */
+const S=(()=>{const d={theme:'auto',acc:'',fav:'',anim:1,rot:0,snd:1};try{return{...d,...JSON.parse(localStorage.getItem('cfg')||'{}')}}catch(e){return d}})();
+function applyCfg(){const r=document.documentElement;S.theme==='auto'?r.removeAttribute('data-theme'):r.dataset.theme=S.theme;if(S.acc){r.style.setProperty('--accent',S.acc);r.style.setProperty('--on','#fff')}else{r.style.removeProperty('--accent');r.style.removeProperty('--on')}r.classList.toggle('noanim',!S.anim);try{localStorage.setItem('cfg',JSON.stringify(S))}catch(e){}}
+applyCfg();
+let AU;const snd=(f,d,t='square',v=.15,n=.3)=>{if(!S.snd)return;try{AU=AU||new(window.AudioContext||window.webkitAudioContext)();const c=AU.currentTime,o=AU.createOscillator(),g=AU.createGain();o.type=t;o.frequency.setValueAtTime(f,c);o.frequency.exponentialRampToValueAtTime(Math.max(20,f*n),c+d);g.gain.setValueAtTime(v,c);g.gain.exponentialRampToValueAtTime(.001,c+d);o.connect(g);g.connect(AU.destination);o.start();o.stop(c+d)}catch(e){}};
+const vib=q=>{try{S.snd&&navigator.vibrate&&navigator.vibrate(q)}catch(e){}};
+function settings(){const row=(t,h)=>`<div style="margin:12px 0"><b>${t}</b><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${h}</div></div>`,ch=(k,v,t)=>`<button class="${S[k]==v?'on':''}" data-k="${k}" data-v="${v}">${t}</button>`;
+  openSheet('<h2>⚙️ Настройки</h2>'+row('Тема',ch('theme','auto','Авто')+ch('theme','light','☀️ Светлая')+ch('theme','dark','🌙 Тёмная'))+row('Цвет акцента',[['','Стандарт'],['#7c3aed','🟣'],['#db2777','🌸'],['#16a34a','🟢'],['#ea580c','🟠']].map(a=>ch('acc',a[0],a[1])).join(''))+row('Анимации',ch('anim',1,'Вкл')+ch('anim',0,'Выкл'))+row('Автовращение телефона',ch('rot',1,'Вкл')+ch('rot',0,'Выкл'))+row('Звук и вибрация',ch('snd',1,'Вкл')+ch('snd',0,'Выкл'))+`<div style="margin:12px 0"><b>⭐ Любимый телефон</b><select id="sFav" style="margin-top:6px"><option value="">— не выбран —</option>${P.map(p=>`<option value="${p.id}" ${S.fav===p.id?'selected':''}>${p.name}</option>`).join('')}</select></div>`);
+  sheet.querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;S[b.dataset.k]=/^[01]$/.test(v)?+v:v;if(b.dataset.k==='theme'||b.dataset.k==='acc')ach('style');applyCfg();settings()});
+  $('#sFav').onchange=e=>{S.fav=e.target.value;if(S.fav)ach('fav');applyCfg();if(!location.hash.includes('/phone/'))draw()}}
+$('#bSet').onclick=settings;
+
+/* ---------- роутинг ---------- */
+function route(){
+  closeSheet();stopBrk();$('#tip').style.opacity=0;
+  const m=location.hash.match(/^#\/phone\/(.+)$/);
+  const p=m&&byId(m[1]);
+  if(p){seen(p.id);phonePage(p);document.title=p.name+' — Телефоны изнутри'}else{list();document.title='Телефоны изнутри'}
+  scrollTo(0,0);
+}
+addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
